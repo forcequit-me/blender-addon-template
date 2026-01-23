@@ -1,0 +1,105 @@
+{
+  "name": "blender-addon-workflow",
+  "version": "1.0.0",
+  "description": "Complete workflow for Blender addon development with live testing, version compatibility, and documentation support",
+  "author": "Claude Code",
+
+  "commands": [
+    "../../../commands/new-operator.md",
+    "../../../commands/new-panel.md",
+    "../../../commands/test-addon.md",
+    "../../../commands/package-addon.md",
+    "../../../commands/setup-blender-dev.md",
+    "../../../commands/check-compatibility.md",
+    "../../../commands/upgrade-addon.md",
+    "../../../commands/add-version-support.md",
+    "../../../commands/test-in-blender.md",
+    "../../../commands/inspect-scene.md",
+    "../../../commands/live-dev.md",
+    "../../../commands/create-test-scene.md",
+    "../../../commands/docs-lookup.md",
+    "../../../commands/api-example.md",
+    "../../../commands/compare-api-versions.md",
+    "../../../commands/add-performance-metrics.md",
+    "../../../commands/build.md",
+    "../../../commands/bump-version.md",
+    "../../../commands/update-changelog.md",
+    "../../../commands/release.md"
+  ],
+
+  "skills": [
+    "../../../skills/blender-api-patterns/SKILL.md",
+    "../../../skills/blender-performance/SKILL.md",
+    "../../../skills/blender-ui-patterns/SKILL.md",
+    "../../../skills/addon-architecture/SKILL.md",
+    "../../../skills/blender-version-compatibility/SKILL.md",
+    "../../../skills/blender-mcp-workflows/SKILL.md",
+    "../../../skills/blender-documentation/SKILL.md",
+    "../../../skills/performance-optimization/SKILL.md",
+    "../../../skills/threading-async/SKILL.md"
+  ],
+
+  "agents": [
+    "../../../agents/blender-api-expert.md",
+    "../../../agents/ui-designer.md",
+    "../../../agents/addon-tester.md",
+    "../../../agents/performance-auditor.md",
+    "../../../agents/code-reviewer.md",
+    "../../../agents/version-compatibility-expert.md",
+    "../../../agents/blender-live-tester.md",
+    "../../../agents/release-manager.md"
+  ],
+
+  "hooks": [
+    "../../../hooks/pre-commit.md",
+    "../../../hooks/post-edit.md",
+    "../../../hooks/pre-package.md"
+  ],
+
+  "features": {
+    "live_testing": {
+      "description": "Test operators in running Blender via MCP",
+      "requires": ["blender-mcp"]
+    },
+    "version_compatibility": {
+      "description": "Multi-version Blender support with automatic compatibility checks",
+      "supported_versions": ["2.80+", "3.x", "4.x"]
+    },
+    "documentation_lookup": {
+      "description": "Search and reference official Blender documentation",
+      "sources": [
+        "https://docs.blender.org/api/current/",
+        "https://docs.blender.org/manual/en/latest/"
+      ]
+    },
+    "performance_profiling": {
+      "description": "Built-in performance tracking and optimization suggestions"
+    }
+  },
+
+  "workflows": {
+    "new_feature": [
+      "/new-operator",
+      "/test-in-blender",
+      "/check-compatibility",
+      "/package-addon"
+    ],
+    "upgrade": [
+      "/check-compatibility",
+      "/compare-api-versions",
+      "/upgrade-addon",
+      "/test-addon"
+    ],
+    "debug": [
+      "/inspect-scene",
+      "/test-in-blender",
+      "/add-performance-metrics"
+    ],
+    "release": [
+      "/bump-version",
+      "/update-changelog",
+      "/build",
+      "/release"
+    ]
+  }
+}
