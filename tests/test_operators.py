@@ -25,7 +25,7 @@ class TestOperatorRegistration:
 
     def test_example_operator_registered(self):
         """Verify the example operator is registered."""
-        assert_operator_exists("object.addon_example")
+        assert_operator_exists("addon.example_operator")
 
     # Add more operator registration tests here:
     # def test_another_operator_registered(self):
@@ -50,41 +50,43 @@ class TestExampleOperator:
         """Operator poll should fail when no object is active."""
         bpy.context.view_layer.objects.active = None
         # Note: poll() is accessed differently for testing
-        assert bpy.ops.object.addon_example.poll() == False
+        assert bpy.ops.addon.example_operator.poll() == False
 
     def test_poll_succeeds_with_active_object(self, cube):
         """Operator poll should succeed with an active object."""
-        assert bpy.ops.object.addon_example.poll() == True
+        assert bpy.ops.addon.example_operator.poll() == True
 
     def test_execute_returns_finished(self, cube):
         """Operator should return FINISHED on success."""
-        result = bpy.ops.object.addon_example()
+        result = bpy.ops.addon.example_operator()
         assert result == {'FINISHED'}
 
     def test_execute_modifies_object(self, cube):
-        """Operator should modify the object as expected."""
+        """Operator should move active object by `offset` on Z (default 1.0)."""
         original_z = cube.location.z
-        bpy.ops.object.addon_example()
-        # Verify the operator's effect (adjust based on your operator)
-        assert cube.location.z != original_z
+        bpy.ops.addon.example_operator()
+        assert cube.location.z == pytest.approx(original_z + 1.0)
+
+    def test_execute_with_custom_offset(self, cube):
+        """Operator respects custom offset property."""
+        original_z = cube.location.z
+        bpy.ops.addon.example_operator(offset=2.5)
+        assert cube.location.z == pytest.approx(original_z + 2.5)
 
     def test_operator_is_undoable(self, cube):
-        """Operator should support undo."""
+        """Operator should support undo (bl_options includes 'UNDO')."""
         original_z = cube.location.z
 
-        # Execute operator
-        bpy.ops.object.addon_example()
-        modified_z = cube.location.z
-        assert modified_z != original_z
+        bpy.ops.addon.example_operator()
+        assert cube.location.z == pytest.approx(original_z + 1.0)
 
-        # Undo
         bpy.ops.ed.undo()
-        assert cube.location.z == original_z
+        assert cube.location.z == pytest.approx(original_z)
 
     def test_operator_with_properties(self, cube):
         """Test operator with custom property values."""
         # If your operator has properties, test them:
-        # result = bpy.ops.object.addon_example(my_property=5.0)
+        # result = bpy.ops.addon.example_operator(my_property=5.0)
         # assert result == {'FINISHED'}
         pass
 
@@ -110,7 +112,7 @@ class TestOperatorEdgeCases:
         bpy.context.view_layer.objects.active = None
 
         # Should not crash, poll should return False
-        assert bpy.ops.object.addon_example.poll() == False
+        assert bpy.ops.addon.example_operator.poll() == False
 
     def test_wrong_object_type(self):
         """Operator handles non-mesh objects appropriately."""
@@ -120,7 +122,7 @@ class TestOperatorEdgeCases:
 
         # Depending on your operator's poll(), this may or may not work
         # Adjust test based on expected behavior
-        # result = bpy.ops.object.addon_example.poll()
+        # result = bpy.ops.addon.example_operator.poll()
         # assert result == False  # If operator requires mesh
         pass
 
@@ -130,7 +132,7 @@ class TestOperatorEdgeCases:
         bpy.ops.object.mode_set(mode='EDIT')
 
         # Poll may fail in edit mode (depends on operator)
-        # result = bpy.ops.object.addon_example.poll()
+        # result = bpy.ops.addon.example_operator.poll()
         # assert result == False
 
         # Return to object mode
@@ -139,7 +141,7 @@ class TestOperatorEdgeCases:
     def test_multiple_selected_objects(self, selected_objects):
         """Operator works with multiple selected objects."""
         # Test behavior with multiple selections
-        result = bpy.ops.object.addon_example()
+        result = bpy.ops.addon.example_operator()
         assert result == {'FINISHED'}
 
 
@@ -191,7 +193,7 @@ class TestBatchOperations:
 
         # Time the operation
         start = time.perf_counter()
-        # bpy.ops.object.addon_example()
+        # bpy.ops.addon.example_operator()
         elapsed = time.perf_counter() - start
 
         # Assert reasonable performance (adjust threshold as needed)

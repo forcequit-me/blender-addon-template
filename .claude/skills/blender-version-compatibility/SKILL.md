@@ -1,6 +1,39 @@
+---
+name: blender-version-compatibility
+description: Patterns for supporting multiple Blender versions (3.6 LTS through 4.2+) — version detection via bpy.app.version, compat.py wrappers, deprecated API migrations (node sockets, auto_smooth, bgl removal), bl_info minimum version, and Blender 4.2+ extension manifest dual-mode packaging. Use when targeting multiple Blender releases.
+---
+
 # Blender Version Compatibility
 
 Expert knowledge for supporting multiple Blender versions.
+
+## Blender 4.2+ Extension Format
+
+Starting with Blender 4.2, addons can ship as **extensions** via `blender_manifest.toml`. Legacy `bl_info`-based addons still work in 4.2+ through a compatibility layer, but submitting to extensions.blender.org requires the manifest.
+
+**Dual-mode packaging** (this template's default):
+- `addon_name/__init__.py` keeps `bl_info` → loads in 3.6 – 4.1
+- `addon_name/blender_manifest.toml` → takes precedence in 4.2+
+- `build.py package --mode=both` emits both zips
+
+**Manifest essentials**:
+```toml
+schema_version = "1.0.0"
+id = "addon_name"
+version = "1.0.0"
+name = "Addon Name"
+tagline = "Brief description"
+maintainer = "Your Name <you@example.com>"
+type = "add-on"
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
+```
+
+**Keep in sync with bl_info**: `name`, `version`, `blender_version_min` (vs `bl_info["blender"]` tuple), `tagline` (vs `description`), `maintainer` (vs `author`).
+
+**Permissions**: 4.2+ extensions must declare `[permissions]` for files, network, clipboard, camera, microphone access. Legacy addons have no such gate.
+
+Full guide: `docs/EXTENSION_MIGRATION.md`.
 
 ## When to Use This Skill
 - Supporting multiple Blender versions

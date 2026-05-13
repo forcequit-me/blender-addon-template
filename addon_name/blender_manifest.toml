@@ -1,0 +1,32 @@
+# Blender 4.2+ extension manifest.
+# Keep in sync with bl_info in __init__.py.
+# Docs: https://docs.blender.org/manual/en/latest/advanced/extensions/
+
+schema_version = "1.0.0"
+
+id = "addon_name"
+version = "1.0.0"
+name = "Addon Name"
+tagline = "Brief description of what this addon does"
+maintainer = "Your Name <your@email.example>"
+type = "add-on"
+
+blender_version_min = "4.2.0"
+# blender_version_max = "5.0.0"  # uncomment to cap
+
+license = [
+    "SPDX:GPL-3.0-or-later",
+]
+
+# website = "https://example.com/addon"
+# tags = ["Object", "Mesh"]
+
+# Permissions (required for 4.2+):
+# [permissions]
+# files = "Read/write project files"
+# network = "Fetch remote resources"
+
+# Wheels (bundled Python packages):
+# wheels = [
+#   "./wheels/somepkg-1.0-py3-none-any.whl",
+# ]

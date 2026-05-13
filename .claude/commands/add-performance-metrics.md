@@ -1,5 +1,7 @@
 ---
 description: Add performance tracking to operator
+argument-hint: "[operator-name]"
+allowed-tools: Read, Edit, Grep
 ---
 
 Add performance profiling and metrics to an operator for optimization.

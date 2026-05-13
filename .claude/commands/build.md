@@ -1,5 +1,7 @@
 ---
 description: Build and package addon for distribution
+argument-hint: "[package|validate|clean]"
+allowed-tools: Bash, Read, Glob
 ---
 
 Build and package the addon using build.py automation.

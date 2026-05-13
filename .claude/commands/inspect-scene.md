@@ -1,5 +1,7 @@
 ---
 description: Query current Blender scene via MCP
+argument-hint: "[what to inspect]"
+allowed-tools: Bash, Read
 ---
 
 Inspect the current Blender scene state via MCP connection for debugging and development.

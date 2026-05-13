@@ -1,5 +1,7 @@
 ---
 description: Create a new Blender UI panel
+argument-hint: "[panel-name] [bl_space_type]"
+allowed-tools: Read, Write, Edit, Glob, Grep
 ---
 
 Create a new UI panel with proper registration and layout examples.

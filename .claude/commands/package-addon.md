@@ -1,5 +1,7 @@
 ---
 description: Package addon for distribution
+argument-hint: "[legacy|extension|both]"
+allowed-tools: Bash, Read, Glob
 ---
 
 Package the addon into a distributable zip file with proper structure.

@@ -321,66 +321,68 @@ def cmd_version(new_version: Optional[str] = None, bump: Optional[str] = None):
             sys.exit(1)
 
 
-def cmd_package(clean_first: bool = False):
-    """Package addon for distribution."""
-    if clean_first:
-        cmd_clean()
-
-    # Validate first
-    if not cmd_validate():
-        print("\nPackaging aborted due to validation errors")
-        sys.exit(1)
-
-    print("\nPackaging addon...")
-
+def _build_zip(mode: str, version_str: str) -> Path:
+    """Build a zip for `mode` ('legacy' or 'extension'). Returns the zip path."""
     project_root = get_project_root()
     addon_path = get_addon_path()
     build_path = get_build_path()
-
-    # Get version for filename
-    version = get_version()
-    version_str = version_string(version) if version else "unknown"
-
-    # Create build directory
     build_path.mkdir(exist_ok=True)
 
-    # Generate output filename
-    timestamp = datetime.now().strftime("%Y%m%d")
-    zip_name = f"{ADDON_FOLDER}-v{version_str}.zip"
-    zip_path = build_path / zip_name
+    manifest_path = addon_path / "blender_manifest.toml"
+    if mode == 'extension' and not manifest_path.exists():
+        print(f"Error: extension mode requires {manifest_path}")
+        sys.exit(1)
 
-    # Remove existing zip if present
+    suffix = "" if mode == 'legacy' else "-extension"
+    zip_name = f"{ADDON_FOLDER}-v{version_str}{suffix}.zip"
+    zip_path = build_path / zip_name
     if zip_path.exists():
         zip_path.unlink()
 
-    # Create ZIP file
     file_count = 0
-
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-        # Add addon folder contents
         for file_path in addon_path.rglob('*'):
-            if file_path.is_file() and not should_exclude(file_path):
-                arcname = file_path.relative_to(project_root)
-                zf.write(file_path, arcname)
-                file_count += 1
+            if not file_path.is_file() or should_exclude(file_path):
+                continue
+            # In legacy mode, drop the manifest so Blender doesn't try to treat it as an extension
+            if mode == 'legacy' and file_path.name == 'blender_manifest.toml':
+                continue
+            arcname = file_path.relative_to(project_root)
+            zf.write(file_path, arcname)
+            file_count += 1
 
-        # Add root files if specified
         for root_file in INCLUDE_ROOT_FILES:
             root_path = project_root / root_file
             if root_path.exists():
                 zf.write(root_path, root_file)
                 file_count += 1
 
-    # Report results
     zip_size = zip_path.stat().st_size
     size_str = f"{zip_size / 1024:.1f} KB" if zip_size < 1024 * 1024 else f"{zip_size / (1024 * 1024):.2f} MB"
+    install_hint = "Add-ons > Install" if mode == 'legacy' else "Get Extensions > Install from Disk"
+    print(f"  [{mode}] {zip_path.name}  ({file_count} files, {size_str})")
+    print(f"           Install: Edit > Preferences > {install_hint}")
+    return zip_path
 
-    print(f"\nPackage created successfully!")
-    print(f"  Output: {zip_path}")
-    print(f"  Files:  {file_count}")
-    print(f"  Size:   {size_str}")
-    print(f"\nInstall in Blender:")
-    print(f"  Edit > Preferences > Add-ons > Install > Select {zip_name}")
+
+def cmd_package(clean_first: bool = False, mode: str = 'legacy'):
+    """Package addon for distribution."""
+    if clean_first:
+        cmd_clean()
+
+    if not cmd_validate():
+        print("\nPackaging aborted due to validation errors")
+        sys.exit(1)
+
+    print(f"\nPackaging addon (mode={mode})...")
+
+    version = get_version()
+    version_str = version_string(version) if version else "unknown"
+
+    modes = ['legacy', 'extension'] if mode == 'both' else [mode]
+    for m in modes:
+        _build_zip(m, version_str)
+    print("\nDone.")
 
 
 # =============================================================================
@@ -408,6 +410,12 @@ Examples:
     # Package command
     package_parser = subparsers.add_parser('package', help='Package addon for distribution')
     package_parser.add_argument('--clean', action='store_true', help='Clean build folder first')
+    package_parser.add_argument(
+        '--mode',
+        choices=['legacy', 'extension', 'both'],
+        default='legacy',
+        help='Package format: legacy bl_info (3.6-4.1), extension manifest (4.2+), or both',
+    )
 
     # Version command
     version_parser = subparsers.add_parser('version', help='Show or set version')
@@ -423,7 +431,7 @@ Examples:
     args = parser.parse_args()
 
     if args.command == 'package':
-        cmd_package(clean_first=args.clean)
+        cmd_package(clean_first=args.clean, mode=args.mode)
     elif args.command == 'version':
         cmd_version(new_version=args.new_version, bump=args.bump)
     elif args.command == 'validate':

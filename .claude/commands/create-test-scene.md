@@ -1,5 +1,7 @@
 ---
 description: Set up test scene via MCP
+argument-hint: "[scene-type basic|complex|empty]"
+allowed-tools: Bash, Read
 ---
 
 Create a test scene in Blender via MCP for testing addon functionality.

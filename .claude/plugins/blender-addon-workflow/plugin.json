@@ -5,56 +5,61 @@
   "author": "Claude Code",
 
   "commands": [
-    "../../../commands/new-operator.md",
-    "../../../commands/new-panel.md",
-    "../../../commands/test-addon.md",
-    "../../../commands/package-addon.md",
-    "../../../commands/setup-blender-dev.md",
-    "../../../commands/check-compatibility.md",
-    "../../../commands/upgrade-addon.md",
-    "../../../commands/add-version-support.md",
-    "../../../commands/test-in-blender.md",
-    "../../../commands/inspect-scene.md",
-    "../../../commands/live-dev.md",
-    "../../../commands/create-test-scene.md",
-    "../../../commands/docs-lookup.md",
-    "../../../commands/api-example.md",
-    "../../../commands/compare-api-versions.md",
-    "../../../commands/add-performance-metrics.md",
-    "../../../commands/build.md",
-    "../../../commands/bump-version.md",
-    "../../../commands/update-changelog.md",
-    "../../../commands/release.md"
+    "../../commands/new-operator.md",
+    "../../commands/new-panel.md",
+    "../../commands/test-addon.md",
+    "../../commands/package-addon.md",
+    "../../commands/setup-blender-dev.md",
+    "../../commands/check-compatibility.md",
+    "../../commands/upgrade-addon.md",
+    "../../commands/add-version-support.md",
+    "../../commands/test-in-blender.md",
+    "../../commands/inspect-scene.md",
+    "../../commands/live-dev.md",
+    "../../commands/create-test-scene.md",
+    "../../commands/docs-lookup.md",
+    "../../commands/api-example.md",
+    "../../commands/compare-api-versions.md",
+    "../../commands/add-performance-metrics.md",
+    "../../commands/build.md",
+    "../../commands/bump-version.md",
+    "../../commands/update-changelog.md",
+    "../../commands/release.md"
   ],
 
   "skills": [
-    "../../../skills/blender-api-patterns/SKILL.md",
-    "../../../skills/blender-performance/SKILL.md",
-    "../../../skills/blender-ui-patterns/SKILL.md",
-    "../../../skills/addon-architecture/SKILL.md",
-    "../../../skills/blender-version-compatibility/SKILL.md",
-    "../../../skills/blender-mcp-workflows/SKILL.md",
-    "../../../skills/blender-documentation/SKILL.md",
-    "../../../skills/performance-optimization/SKILL.md",
-    "../../../skills/threading-async/SKILL.md"
+    "../../skills/blender-api-patterns/SKILL.md",
+    "../../skills/blender-performance/SKILL.md",
+    "../../skills/blender-ui-patterns/SKILL.md",
+    "../../skills/addon-architecture/SKILL.md",
+    "../../skills/blender-version-compatibility/SKILL.md",
+    "../../skills/blender-mcp-workflows/SKILL.md",
+    "../../skills/blender-documentation/SKILL.md",
+    "../../skills/performance-optimization/SKILL.md",
+    "../../skills/threading-async/SKILL.md"
   ],
 
   "agents": [
-    "../../../agents/blender-api-expert.md",
-    "../../../agents/ui-designer.md",
-    "../../../agents/addon-tester.md",
-    "../../../agents/performance-auditor.md",
-    "../../../agents/code-reviewer.md",
-    "../../../agents/version-compatibility-expert.md",
-    "../../../agents/blender-live-tester.md",
-    "../../../agents/release-manager.md"
+    "../../agents/blender-api-expert.md",
+    "../../agents/ui-designer.md",
+    "../../agents/addon-tester.md",
+    "../../agents/performance-auditor.md",
+    "../../agents/code-reviewer.md",
+    "../../agents/version-compatibility-expert.md",
+    "../../agents/blender-live-tester.md",
+    "../../agents/release-manager.md"
   ],
 
   "hooks": [
-    "../../../hooks/pre-commit.md",
-    "../../../hooks/post-edit.md",
-    "../../../hooks/pre-package.md"
+    "../../hooks/pre-commit.md",
+    "../../hooks/post-edit.md",
+    "../../hooks/pre-package.md"
   ],
+
+  "metadata": {
+    "blender_version_range": "3.6 LTS through 4.2+ (extension manifest supported)",
+    "platforms": ["Windows", "macOS", "Linux"]
+  },
 
   "features": {
     "live_testing": {
@@ -63,7 +68,7 @@
     },
     "version_compatibility": {
       "description": "Multi-version Blender support with automatic compatibility checks",
-      "supported_versions": ["2.80+", "3.x", "4.x"]
+      "supported_versions": ["3.6 LTS", "4.0", "4.1", "4.2 (legacy + extension)"]
     },
     "documentation_lookup": {
       "description": "Search and reference official Blender documentation",

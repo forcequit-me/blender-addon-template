@@ -1,5 +1,7 @@
 ---
 description: Find code examples from Blender docs
+argument-hint: "<api-name>"
+allowed-tools: WebFetch, WebSearch, Read
 ---
 
 Search for working code examples from official Blender documentation.

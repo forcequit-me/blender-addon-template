@@ -1,3 +1,10 @@
+---
+name: release-manager
+description: Use to manage addon release lifecycle. Handles semantic version bumps, CHANGELOG.md updates in Keep a Changelog format, build validation, package creation, and git tagging. Invoke before cutting a release.
+tools: Read, Write, Edit, Bash, Glob, Grep
+model: inherit
+---
+
 # Release Manager Agent
 
 Specializes in addon versioning, changelog management, and release preparation.

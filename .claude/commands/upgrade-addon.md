@@ -1,5 +1,7 @@
 ---
 description: Upgrade addon to a newer Blender version
+argument-hint: "[target-version]"
+allowed-tools: Read, Edit, Grep, Glob
 ---
 
 Upgrade addon code to support a newer Blender version by replacing deprecated APIs.

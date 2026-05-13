@@ -6,12 +6,19 @@ This document describes Blender version support and compatibility considerations
 
 | Blender Version | Support Status | Notes |
 |-----------------|----------------|-------|
-| 4.2+ | Full | Latest features |
+| 4.2+ | Full | Extension manifest supported (see [EXTENSION_MIGRATION.md](EXTENSION_MIGRATION.md)) |
 | 4.1 | Full | Auto-smooth changes |
 | 4.0 | Full | Node socket API changes |
 | 3.6 LTS | Full | Minimum supported |
 | 3.3 LTS | Partial | May work, not tested |
 | < 3.0 | Not Supported | Major API differences |
+
+## Package Formats
+
+- **Legacy addon** (3.6 – 4.1, and 4.2 via compat layer): driven by `bl_info` in `__init__.py`.
+- **Extension** (4.2+): driven by `blender_manifest.toml`. Required for submission to extensions.blender.org.
+
+Build with `python build.py package --mode=legacy|extension|both`. See [EXTENSION_MIGRATION.md](EXTENSION_MIGRATION.md) for migration details.
 
 ## Version-Specific Features
 

@@ -1,3 +1,10 @@
+---
+name: addon-tester
+description: Use to create test cases for operators, validate addon registration, test edge cases and error handling, and check Blender version compatibility. Writes pytest-style tests that run inside Blender.
+tools: Read, Write, Bash, Glob
+model: inherit
+---
+
 # Addon Tester Agent
 
 Creates test cases and validates addon functionality.

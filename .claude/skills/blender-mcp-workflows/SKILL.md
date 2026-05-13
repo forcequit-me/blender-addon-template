@@ -1,3 +1,8 @@
+---
+name: blender-mcp-workflows
+description: Workflows for using the Blender MCP server to execute Python in a running Blender instance, inspect scene state, run live operator tests, and profile performance. Use for live development, interactive debugging, and automated test scene creation.
+---
+
 # Blender MCP Workflows
 
 Expert knowledge for using Blender MCP (Model Context Protocol) for live development and testing.

@@ -13,8 +13,58 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from conftest import requires_blender, IN_BLENDER
+
 # Add addon to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+if IN_BLENDER:
+    import bpy
+
+
+# =============================================================================
+# REAL UTILITY TESTS (require Blender)
+# =============================================================================
+
+@requires_blender
+class TestRealUtils:
+    """Tests against the actual utility functions in addon_name/utils.py."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        yield
+
+    def test_get_selected_objects_filters_by_type(self, multiple_cubes):
+        """get_selected_objects respects obj_type filter."""
+        from addon_name.utils import get_selected_objects
+
+        for c in multiple_cubes:
+            c.select_set(True)
+        bpy.ops.object.camera_add()
+        cam = bpy.context.active_object
+        cam.select_set(True)
+
+        meshes = get_selected_objects(bpy.context, obj_type='MESH')
+        cams = get_selected_objects(bpy.context, obj_type='CAMERA')
+
+        assert len(meshes) == len(multiple_cubes)
+        assert len(cams) == 1
+        assert all(o.type == 'MESH' for o in meshes)
+
+    def test_calculate_bounds_default_cube(self, cube):
+        """calculate_bounds on default cube returns (-1,-1,-1)..(1,1,1)."""
+        from addon_name.utils import calculate_bounds
+
+        min_p, max_p, dims = calculate_bounds(cube)
+        assert min_p.x == pytest.approx(-1.0)
+        assert max_p.x == pytest.approx(1.0)
+        assert dims.x == pytest.approx(2.0)
+        assert dims.y == pytest.approx(2.0)
+        assert dims.z == pytest.approx(2.0)
+
+
+
 
 
 # =============================================================================

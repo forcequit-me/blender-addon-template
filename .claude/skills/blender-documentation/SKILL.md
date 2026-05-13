@@ -1,3 +1,8 @@
+---
+name: blender-documentation
+description: Navigation guide for official Blender documentation — Python API reference, manual, version-specific docs. Use when looking up API signatures, finding code examples, or checking version-specific changes at docs.blender.org.
+---
+
 # Blender Documentation Reference
 
 Expert knowledge for navigating and using official Blender documentation.

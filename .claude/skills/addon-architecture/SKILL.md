@@ -1,3 +1,8 @@
+---
+name: addon-architecture
+description: Patterns for structuring Blender addons — registration/unregistration order, multi-file layout, addon preferences, keymaps, and resource management. Triggers when starting a new addon, organizing multi-file addons, or implementing preferences.
+---
+
 # Addon Architecture Patterns
 
 Expert knowledge for structuring Blender addons.

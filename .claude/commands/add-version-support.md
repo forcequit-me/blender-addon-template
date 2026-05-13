@@ -1,5 +1,7 @@
 ---
 description: Add support for additional Blender versions
+argument-hint: "[target-version e.g. 4.2]"
+allowed-tools: Read, Edit, Grep, Glob
 ---
 
 Add backward or forward compatibility for additional Blender versions.

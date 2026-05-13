@@ -1,5 +1,7 @@
 ---
 description: Bump addon version and update changelog
+argument-hint: "[major|minor|patch]"
+allowed-tools: Read, Edit, Bash, Grep
 ---
 
 Bump the addon version using semantic versioning and update the changelog.
