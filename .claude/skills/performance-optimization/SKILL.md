@@ -1,3 +1,8 @@
+---
+name: performance-optimization
+description: General profiling and optimization techniques — time module instrumentation, cProfile, numpy foreach_get/set for large arrays, algorithmic complexity analysis. Use to identify bottlenecks and compare algorithm performance. Complements blender-performance for non-Blender-specific work.
+---
+
 # Performance Optimization Skill
 
 Expert knowledge for profiling and optimizing Blender addon performance.

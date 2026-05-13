@@ -1,5 +1,7 @@
 ---
 description: Complete release workflow - version, changelog, package, and tag
+argument-hint: "[major|minor|patch]"
+allowed-tools: Read, Edit, Bash, Grep
 ---
 
 Execute a complete release workflow: bump version, finalize changelog, package addon, and create git tag.

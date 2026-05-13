@@ -1,5 +1,6 @@
 ---
 description: Test the addon in Blender
+allowed-tools: Bash, Read, Glob
 ---
 
 Test the addon by reloading scripts and checking for errors.

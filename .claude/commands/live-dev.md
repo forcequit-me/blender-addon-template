@@ -1,5 +1,6 @@
 ---
 description: Interactive development mode via MCP
+allowed-tools: Bash, Read, Edit
 ---
 
 Enable interactive development mode with live code execution and monitoring via MCP.

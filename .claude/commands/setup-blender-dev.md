@@ -1,5 +1,6 @@
 ---
 description: Initialize Blender development environment
+allowed-tools: Bash, Read, Write, Edit, Glob
 ---
 
 Set up a new Blender addon development environment with all necessary files and structure.

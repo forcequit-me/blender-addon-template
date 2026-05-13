@@ -1,5 +1,7 @@
 ---
 description: Compare Blender API across versions
+argument-hint: "<version-a> <version-b>"
+allowed-tools: WebFetch, Read, Grep
 ---
 
 Compare API between two Blender versions to identify changes, renames, and migration paths.

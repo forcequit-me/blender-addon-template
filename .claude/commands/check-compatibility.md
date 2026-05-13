@@ -1,5 +1,7 @@
 ---
 description: Analyze addon for Blender version compatibility
+argument-hint: "[target-version]"
+allowed-tools: Read, Grep, Glob
 ---
 
 Scan the addon code for version-specific API usage and compatibility issues.

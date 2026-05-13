@@ -1,3 +1,8 @@
+---
+name: blender-performance
+description: Blender-specific performance patterns — minimizing viewport updates, batching property changes, using BMesh over operators, depsgraph efficiency. Use when an operator feels slow, processing large datasets, or addressing viewport lag.
+---
+
 # Blender Performance Optimization
 
 Expert knowledge for optimizing Blender addon performance.

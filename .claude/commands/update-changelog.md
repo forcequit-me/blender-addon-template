@@ -1,5 +1,6 @@
 ---
 description: Update changelog with recent changes
+allowed-tools: Read, Edit, Bash, Grep
 ---
 
 Update the CHANGELOG.md file with recent changes, either from git history or manual input.

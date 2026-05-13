@@ -1,3 +1,8 @@
+---
+name: blender-ui-patterns
+description: Blender UI/UX patterns — panel layouts (column/row/split/box), operator dialogs, UILists, custom property editors, icon usage. Use when creating sidebar panels, designing operator interfaces, or following Blender UI conventions.
+---
+
 # Blender UI/UX Patterns
 
 Expert knowledge for creating effective Blender user interfaces.

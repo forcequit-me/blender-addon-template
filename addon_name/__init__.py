@@ -1,3 +1,6 @@
+# Dual-mode addon: `bl_info` below loads in Blender 3.6 – 4.1 (legacy addon path).
+# In Blender 4.2+ the adjacent `blender_manifest.toml` takes precedence and this
+# file is loaded as an extension. Keep both in sync — see docs/EXTENSION_MIGRATION.md.
 bl_info = {
     "name": "Addon Name",
     "author": "Your Name",

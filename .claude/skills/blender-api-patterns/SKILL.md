@@ -1,3 +1,8 @@
+---
+name: blender-api-patterns
+description: Core Blender Python API (bpy) patterns — context access, data manipulation, operators, panels, properties, update callbacks, modal operators. Use when writing or reviewing any bpy code, especially when avoiding common API pitfalls.
+---
+
 # Blender Python API Patterns
 
 Expert knowledge for working with the Blender Python API (bpy).

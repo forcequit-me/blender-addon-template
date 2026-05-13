@@ -37,13 +37,11 @@ class TestPropertyRegistration:
     def test_property_group_attributes(self):
         """Verify property group has expected attributes."""
         scene = bpy.context.scene
-        props = getattr(scene, 'addon_props', None)
-
-        if props is not None:
-            # Check expected properties exist
-            assert hasattr(props, 'float_value'), "Missing float_value property"
-            assert hasattr(props, 'enum_mode'), "Missing enum_mode property"
-            assert hasattr(props, 'enable_feature'), "Missing enable_feature property"
+        props = scene.addon_props
+        assert hasattr(props, 'example_float'), "Missing example_float property"
+        assert hasattr(props, 'example_int'), "Missing example_int property"
+        assert hasattr(props, 'example_bool'), "Missing example_bool property"
+        assert hasattr(props, 'example_enum'), "Missing example_enum property"
 
 
 # =============================================================================
@@ -61,49 +59,36 @@ class TestPropertyValues:
         yield
 
     def test_default_values(self):
-        """Properties have correct default values."""
+        """Properties have correct default values from properties.py."""
         props = bpy.context.scene.addon_props
-
-        # Test default values match what's defined in properties.py
-        # assert props.float_value == 1.0
-        # assert props.enum_mode == 'MODE_A'
-        # assert props.enable_feature == False
-        pass
+        assert props.example_float == pytest.approx(1.0)
+        assert props.example_int == 5
+        assert props.example_bool is False
+        assert props.example_enum == 'OPTION_A'
+        assert props.example_string == ""
 
     def test_float_constraints(self):
-        """Float properties respect min/max constraints."""
+        """example_float clamps to [0.0, 10.0]."""
         props = bpy.context.scene.addon_props
-
-        # Test that values are clamped
-        # props.float_value = 100.0  # Above max
-        # assert props.float_value <= 10.0  # Should be clamped to max
-
-        # props.float_value = -100.0  # Below min
-        # assert props.float_value >= 0.0  # Should be clamped to min
-        pass
+        props.example_float = 100.0
+        assert props.example_float <= 10.0
+        props.example_float = -100.0
+        assert props.example_float >= 0.0
 
     def test_enum_values(self):
-        """Enum properties accept valid values."""
+        """example_enum accepts the three defined options."""
         props = bpy.context.scene.addon_props
-
-        # Test setting valid enum values
-        # props.enum_mode = 'MODE_A'
-        # assert props.enum_mode == 'MODE_A'
-
-        # props.enum_mode = 'MODE_B'
-        # assert props.enum_mode == 'MODE_B'
-        pass
+        for value in ('OPTION_A', 'OPTION_B', 'OPTION_C'):
+            props.example_enum = value
+            assert props.example_enum == value
 
     def test_boolean_toggle(self):
-        """Boolean properties can be toggled."""
+        """example_bool can be toggled."""
         props = bpy.context.scene.addon_props
-
-        # props.enable_feature = True
-        # assert props.enable_feature == True
-
-        # props.enable_feature = False
-        # assert props.enable_feature == False
-        pass
+        props.example_bool = True
+        assert props.example_bool is True
+        props.example_bool = False
+        assert props.example_bool is False
 
 
 # =============================================================================

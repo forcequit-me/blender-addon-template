@@ -1,3 +1,10 @@
+---
+name: ui-designer
+description: Use to review Blender addon panel layouts and suggest UX improvements. Checks layout grouping, icon usage, bl_category placement, label/value splits, and consistency with Blender's native UI conventions.
+tools: Read, Grep
+model: inherit
+---
+
 # UI Designer Agent
 
 Focuses on Blender UI/UX design and panel layout optimization.

@@ -1,4 +1,27 @@
-"""Version compatibility wrappers for multi-version Blender support."""
+"""Version compatibility wrappers for multi-version Blender support.
+
+Major removals to be aware of (no wrappers — guard at call sites with
+``BLENDER_VERSION``):
+
+* ``bgl`` module — removed in Blender 4.0. Port to the ``gpu`` module
+  (``gpu.state``, ``gpu.shader``, ``gpu.matrix``). See
+  https://docs.blender.org/api/current/gpu.html
+* ``gpu.types.GPUOffScreen`` constructor signature and shader builtins were
+  reworked in 4.0+. Code that worked in 3.x will silently render nothing if
+  ported wholesale.
+* ``bpy.types.Mesh.use_auto_smooth`` / ``auto_smooth_angle`` removed in 4.1.
+  Use :func:`set_auto_smooth` below.
+* ``node_tree.inputs.new`` / ``outputs.new`` removed in 4.0. Use
+  :func:`create_node_socket` below.
+
+Version-guard pattern when no wrapper fits::
+
+    from .compat import BLENDER_VERSION
+    if BLENDER_VERSION >= (4, 0, 0):
+        # new-API path
+    else:
+        # legacy path
+"""
 
 import bpy
 

@@ -1,3 +1,10 @@
+---
+name: blender-live-tester
+description: Use to execute operators in a running Blender instance via MCP, inspect live scene state, monitor console for errors, and profile performance against the real Blender runtime. Requires the blender-mcp server to be running.
+tools: Read, Bash
+model: inherit
+---
+
 # Blender Live Tester Agent
 
 Connects to Blender via MCP for live testing.

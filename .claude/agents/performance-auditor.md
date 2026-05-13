@@ -1,3 +1,10 @@
+---
+name: performance-auditor
+description: Use to audit Blender addon code for performance issues. Identifies operator-in-loop anti-patterns, excessive viewport updates, mode-switch overhead, BMesh leaks, and inefficient data access. Suggests prioritized optimizations with impact estimates.
+tools: Read, Grep, Glob
+model: inherit
+---
+
 # Performance Auditor Agent
 
 Reviews code for performance issues and optimization opportunities.

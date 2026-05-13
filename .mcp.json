@@ -23,11 +23,8 @@
     },
     "filesystem": {
       "command": "npx",
-      "args": ["-y", "@anthropic/mcp-server-filesystem"],
-      "description": "File system access for addon directories",
-      "env": {
-        "ALLOWED_PATHS": "${workspaceFolder}"
-      }
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "${workspaceFolder}"],
+      "description": "File system access for addon directories"
     }
   },
   "documentation": {

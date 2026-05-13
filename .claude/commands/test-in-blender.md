@@ -1,5 +1,7 @@
 ---
 description: Live test using Blender MCP connection
+argument-hint: "[operator-name]"
+allowed-tools: Bash, Read
 ---
 
 Execute and test addon code in a running Blender instance via MCP.

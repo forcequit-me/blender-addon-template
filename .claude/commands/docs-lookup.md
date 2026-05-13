@@ -1,5 +1,7 @@
 ---
 description: Search Blender documentation
+argument-hint: "<query>"
+allowed-tools: WebFetch, WebSearch
 ---
 
 Search official Blender documentation for API reference and usage information.

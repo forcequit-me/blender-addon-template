@@ -1,5 +1,7 @@
 ---
 description: Create a new Blender operator with boilerplate
+argument-hint: "[operator-name] [category]"
+allowed-tools: Read, Write, Edit, Glob, Grep
 ---
 
 Create a new Blender operator with proper registration and boilerplate code.

@@ -1,3 +1,8 @@
+---
+name: threading-async
+description: Threading and async patterns specific to Blender — bpy is NOT thread-safe, main-thread marshalling via bpy.app.timers, modal operators for non-blocking UI, background I/O. Use for long-running file operations, network requests, or parallel data preprocessing.
+---
+
 # Threading and Async Patterns for Blender
 
 Expert knowledge for threading, async operations, and background processing in Blender addons.
