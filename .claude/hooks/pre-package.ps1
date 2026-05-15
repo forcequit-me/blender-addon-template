@@ -22,7 +22,7 @@ if ($src -notmatch 'def\s+register\s*\(' -or $src -notmatch 'def\s+unregister\s*
 # Optional: warn on dev artifacts in addon dir
 $artifacts = Get-ChildItem 'addon_name' -Recurse -Include '__pycache__', '*.pyc', '*.blend1' -ErrorAction SilentlyContinue
 if ($artifacts) {
-    [Console]::Error.WriteLine("Pre-package warning: dev artifacts in addon_name/ — $($artifacts.Count) item(s). Run build.py clean.")
+    [Console]::Error.WriteLine("Pre-package warning: dev artifacts in addon_name/ - $($artifacts.Count) item(s). Run build.py clean.")
 }
 
 exit 0

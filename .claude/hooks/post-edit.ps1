@@ -21,15 +21,15 @@ foreach ($m in $opMatches) {
 }
 
 # Hardcoded user paths
-if ($src -match 'C:\\\\Users\\\\' -or $src -match '/home/[a-z]') {
-    $warnings += "hardcoded user path detected — use bpy.path utilities"
+if ($src -match 'C:\\Users\\' -or $src -match '/home/[a-z]') {
+    $warnings += "hardcoded user path detected - use bpy.path utilities"
 }
 
 # print() in operator/utility code (not __init__ banner)
 if ($path -notmatch '__init__\.py$') {
     $printCount = ([regex]::Matches($src, '(?m)^\s*print\s*\(')).Count
     if ($printCount -gt 0) {
-        $warnings += "$printCount print() call(s) — prefer self.report() or logging"
+        $warnings += "$printCount print() call(s) - prefer self.report() or logging"
     }
 }
 
