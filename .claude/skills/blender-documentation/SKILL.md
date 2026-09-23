@@ -1,313 +1,77 @@
 ---
 name: blender-documentation
-description: Navigation guide for official Blender documentation — Python API reference, manual, version-specific docs. Use when looking up API signatures, finding code examples, or checking version-specific changes at docs.blender.org.
+description: Where to look things up for Blender 5.0+ add-on work - the Python API reference (current and per version), release notes with Python API changes, the user manual, the extensions platform rules, the gotchas pages, and the local and live alternatives. Use when you need an API signature, want to know when something changed, or need the manual's wording for a Blender feature.
 ---
 
-# Blender Documentation Reference
+# Blender documentation
 
-Expert knowledge for navigating and using official Blender documentation.
+Fastest first: the running build knows its own API better than any page.
 
-## When to Use This Skill
-- Looking up API reference
-- Finding code examples
-- Understanding Blender concepts
-- Checking version-specific changes
+`<BLENDER_MIN>` and `<BLENDER_LATEST>` below are the two paths in the "Blender installs" section of `CLAUDE.md`.
 
-## Key Documentation Resources
+## 1. Ask Blender
 
-### Python API Reference
-**URL:** https://docs.blender.org/api/current/
-
-Primary resource for addon development:
-- Class and function signatures
-- Property types and parameters
-- Code examples
-- Module documentation
-
-### Blender Manual
-**URL:** https://docs.blender.org/manual/en/latest/
-
-User-facing documentation:
-- Feature explanations
-- Workflow descriptions
-- UI element documentation
-- Concept introductions
-
-### Documentation Hub
-**URL:** https://docs.blender.org/
-
-Central access to all documentation:
-- Links to API docs
-- Manual links
-- Developer documentation
-
-## Version-Specific API Access
-
-### URL Pattern
-```
-https://docs.blender.org/api/{version}/
+```text
+"<BLENDER_MIN>" --background --factory-startup --python-expr "import bpy; f = bpy.types.WindowManager.bl_rna.functions['invoke_confirm']; print([(p.identifier, p.type) for p in f.parameters])"
 ```
 
-### Available Versions
-- `/api/4.2/` - Blender 4.2
-- `/api/4.1/` - Blender 4.1
-- `/api/4.0/` - Blender 4.0
-- `/api/3.6/` - Blender 3.6 LTS
-- `/api/3.3/` - Blender 3.3 LTS
-- `/api/2.93/` - Blender 2.93 LTS
-- `/api/current/` - Latest stable
+- Properties: `bpy.types.X.bl_rna.properties["name"]` (`.type`, `.default`, `.enum_items`, `.description`).
+- Functions: `bpy.types.X.bl_rna.functions["name"].parameters`.
+- Operators: `bpy.ops.object.parent_set.get_rna_type().properties`.
+- With the MCP connected: `bpy_api_lookup` and `describe_node_type` (`blender-mcp-workflows`).
+- Blender's own UI code is the best example of any layout: `<Blender install folder>/<version>/scripts/startup/bl_ui/`, for example `C:/Program Files/Blender Foundation/Blender 5.0/5.0/scripts/startup/bl_ui/` on Windows. Right-click any button in Blender > Edit Source (with Developer Extras on) jumps to it.
 
-### Use Cases
-- Compare APIs between versions
-- Find when features were added/removed
-- Check if node names changed
-- Verify operator parameters
+Check against `BLENDER_MIN`, the minimum, not only the newest installed build.
 
-## Common API Modules
+## 2. API reference
 
-### bpy.types - Type Definitions
-```
-https://docs.blender.org/api/current/bpy.types.html
-```
+| What | URL |
+| --- | --- |
+| Current API | <https://docs.blender.org/api/current/> |
+| A specific version | <https://docs.blender.org/api/5.0/> (also `/5.1/`, `/5.2/`) |
+| One type | `https://docs.blender.org/api/current/bpy.types.UILayout.html` |
+| One operator module | `https://docs.blender.org/api/current/bpy.ops.object.html` |
+| Properties | <https://docs.blender.org/api/current/bpy.props.html> |
+| Timers | <https://docs.blender.org/api/current/bpy.app.timers.html> |
+| Handlers | <https://docs.blender.org/api/current/bpy.app.handlers.html> |
+| GPU drawing (bgl is gone) | <https://docs.blender.org/api/current/gpu.html> |
+| Change log (added and removed per version) | <https://docs.blender.org/api/current/change_log.html> |
 
-Key classes:
-- `Operator` - Base for all operators
-- `Panel` - UI panels
-- `PropertyGroup` - Custom properties
-- `Mesh`, `Object`, `Material` - Data types
-- `UILayout` - UI drawing
+Must-read pages, short and full of traps:
 
-### bpy.props - Property Definitions
-```
-https://docs.blender.org/api/current/bpy.props.html
-```
+- Gotchas: <https://docs.blender.org/api/current/info_gotcha.html>
+- Threading gotchas: <https://docs.blender.org/api/current/info_gotchas_threading.html>
+- Best practice: <https://docs.blender.org/api/current/info_best_practice.html>
+- Tips and tricks: <https://docs.blender.org/api/current/info_tips_and_tricks.html>
 
-Property types:
-- `IntProperty`, `FloatProperty`
-- `BoolProperty`, `StringProperty`
-- `EnumProperty`
-- `FloatVectorProperty`, `IntVectorProperty`
-- `PointerProperty`, `CollectionProperty`
+## 3. Release notes (what changed and when)
 
-### bpy.ops - Operators
-```
-https://docs.blender.org/api/current/bpy.ops.html
-```
+Python API changes per release, the place to look when something broke:
 
-Operator categories:
-- `bpy.ops.object` - Object operations
-- `bpy.ops.mesh` - Mesh editing
-- `bpy.ops.transform` - Transformations
-- `bpy.ops.view3d` - 3D view
-- `bpy.ops.wm` - Window manager
+- <https://developer.blender.org/docs/release_notes/5.0/python_api/>
+- <https://developer.blender.org/docs/release_notes/5.1/python_api/>
+- <https://developer.blender.org/docs/release_notes/5.2/python_api/>
 
-### bpy.data - Blend File Data
-```
-https://docs.blender.org/api/current/bpy.data.html
-```
+The old wiki.blender.org release notes are archived; do not cite them.
 
-Data collections:
-- `bpy.data.objects`
-- `bpy.data.meshes`
-- `bpy.data.materials`
-- `bpy.data.images`
-- `bpy.data.node_groups`
+## 4. User manual and extensions platform
 
-### bpy.context - Current State
-```
-https://docs.blender.org/api/current/bpy.context.html
-```
+Use the manual for what a feature does from the user's side and for Blender's own words for menus and settings, so README and tooltip wording matches what users see.
 
-Context attributes:
-- `active_object`, `selected_objects`
-- `scene`, `view_layer`
-- `mode`
-- `area`, `region`
+- <https://docs.blender.org/manual/en/latest/>
+- Installing legacy add-ons: <https://docs.blender.org/manual/en/latest/editors/preferences/addons.html>
+- Add-ons as extensions, the manifest and the `blender --command extension` tool: <https://docs.blender.org/manual/en/latest/advanced/extensions/index.html>
+- Extensions platform terms (rules 6.1 and 3.9, see `blender-version-targeting`): <https://extensions.blender.org/terms-of-service/>
 
-### bmesh - Mesh Editing
-```
-https://docs.blender.org/api/current/bmesh.html
-```
+## 5. Project documents
 
-BMesh operations:
-- `bmesh.ops` - Operations
-- `bmesh.types` - Element types
-- `bmesh.utils` - Utilities
+For how this add-on is named, documented, built and released, the repo wins over any web page:
 
-### mathutils - Math Types
-```
-https://docs.blender.org/api/current/mathutils.html
-```
+- `CLAUDE.md`: Blender install paths, testing recipe, after-change checklist.
+- `docs/README Spec.md`: README and tooltip rules.
 
-Types:
-- `Vector`
-- `Matrix`
-- `Quaternion`
-- `Euler`
-- `Color`
+## Search tips
 
-## Quick Reference URLs
-
-| Topic | URL Path |
-|-------|----------|
-| API Index | `/api/current/genindex.html` |
-| Module Index | `/api/current/py-modindex.html` |
-| Operator Tutorial | `/api/current/info_tutorial_addon.html` |
-| Best Practices | `/api/current/info_best_practice.html` |
-| Tips & Tricks | `/api/current/info_tips_and_tricks.html` |
-| Gotchas | `/api/current/info_gotcha.html` |
-| API Changes | `/api/current/change_log.html` |
-
-## Navigating API Docs
-
-### Finding a Class
-1. Go to `bpy.types.html`
-2. Search for class name
-3. Or use direct URL: `bpy.types.{ClassName}.html`
-
-Example:
-```
-https://docs.blender.org/api/current/bpy.types.Operator.html
-```
-
-### Finding an Operator
-1. Go to `bpy.ops.html`
-2. Find category (mesh, object, etc.)
-3. Click through to operator
-
-Example:
-```
-https://docs.blender.org/api/current/bpy.ops.mesh.html#bpy.ops.mesh.subdivide
-```
-
-### Finding Property Types
-1. Go to `bpy.props.html`
-2. All property types documented on one page
-
-### Searching the Docs
-- Use browser search (Ctrl+F) on index pages
-- Use the search box in API docs
-- Google: `site:docs.blender.org/api bpy.types.Mesh`
-
-## Code Examples from Docs
-
-### Where to Find Examples
-1. **API Reference** - Most classes have examples
-2. **Tutorial Pages** - Step-by-step examples
-3. **Templates in Blender** - Text Editor > Templates
-
-### Example Locations in Docs
-- `info_tutorial_addon.html` - Basic addon tutorial
-- Class documentation - Example sections
-- Operator documentation - Usage examples
-
-## Manual Sections for Addon Development
-
-### Relevant Manual Pages
-- Scripting: `/manual/en/latest/advanced/scripting/`
-- Preferences: `/manual/en/latest/editors/preferences/`
-- Extensions: `/manual/en/latest/advanced/extensions/`
-
-### Understanding Features
-Before implementing, check manual for:
-- How users interact with feature
-- Expected behavior
-- UI conventions
-
-## Release Notes and API Changes
-
-### Release Notes
-```
-https://wiki.blender.org/wiki/Reference/Release_Notes
-```
-
-Check for:
-- New features
-- Deprecated APIs
-- Breaking changes
-
-### API Changes Log
-```
-https://docs.blender.org/api/current/change_log.html
-```
-
-Details:
-- Added/removed classes
-- Changed parameters
-- Renamed items
-
-## Community Resources
-
-### Blender Artists
-- Forum for addon developers
-- Code reviews and help
-
-### Blender Stack Exchange
-- Q&A for Blender scripting
-- Searchable archive
-
-### Blender Developer Documentation
-```
-https://developer.blender.org/docs/
-```
-
-For advanced topics:
-- Building Blender
-- Contributing code
-- Architecture overview
-
-## Documentation Best Practices
-
-### When to Check Docs
-1. **Before starting** - Understand available APIs
-2. **When stuck** - Find examples and patterns
-3. **Before release** - Verify version compatibility
-4. **After Blender update** - Check for changes
-
-### Effective Documentation Usage
-1. Start with tutorial pages for concepts
-2. Use API reference for specifics
-3. Check examples for patterns
-4. Verify in version-specific docs
-
-### Bookmarks to Keep
-- API index page
-- bpy.types overview
-- Version-specific docs for supported versions
-- Change log
-
-## Quick Lookup Patterns
-
-### Class Documentation
-```
-# Pattern
-https://docs.blender.org/api/current/bpy.types.{ClassName}.html
-
-# Examples
-bpy.types.Operator
-bpy.types.Panel
-bpy.types.Mesh
-bpy.types.Object
-```
-
-### Operator Documentation
-```
-# Pattern
-https://docs.blender.org/api/current/bpy.ops.{category}.html
-
-# Examples
-bpy.ops.mesh.html
-bpy.ops.object.html
-bpy.ops.transform.html
-```
-
-### Module Documentation
-```
-# Pattern
-https://docs.blender.org/api/current/{module}.html
-
-# Examples
-bmesh.html
-mathutils.html
-bpy.utils.html
-```
+- `site:docs.blender.org/api/current <TypeName>` finds the type page.
+- When a page and the running Blender disagree, the running Blender is right for that version.
+- Community answers (Stack Exchange, forums) are often for 2.8x to 4.x. Check any snippet against `BLENDER_MIN` before using it.

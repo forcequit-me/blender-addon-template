@@ -1,127 +1,27 @@
 ---
-description: Live test using Blender MCP connection
-argument-hint: "[operator-name]"
-allowed-tools: Bash, Read
+description: Test the add-on's operators in the running Blender through the Blender MCP
+argument-hint: "[operator idname]"
+allowed-tools: Read, Grep, Glob, mcp__blender__get_addon_status, mcp__blender__execute_blender_code, mcp__blender__get_scene_info, mcp__blender__get_object_info, mcp__blender__get_viewport_screenshot
 ---
 
-Execute and test addon code in a running Blender instance via MCP.
+Live-test the add-on (and one operator, if given in `$ARGUMENTS`) in the user's open Blender. Follow the `blender-live-tester` agent's rules; the short version:
 
-**Prerequisites:**
-- Blender MCP server must be running
-- Blender instance must be connected
-
-**Process:**
-
-1. **Connect to Blender:**
-   - Verify MCP connection is active
-   - Get current Blender version
-   - Check current scene state
-
-2. **Test operator registration:**
+1. `mcp__blender__get_addon_status`. No connection: stop and point to `/setup-blender-dev`.
+2. Create a scratch scene (`bpy.data.scenes.new("Addon Test")`, make it the window's scene). Never touch the user's objects, never save.
+3. Load the repo copy, not the installed release. Package name is `ADDON_FOLDER` in `build.py`; if a release is installed as an extension, ask the user to disable it first.
    ```python
-   # Execute via MCP
-   import bpy
-
-   # Check if operator is registered
-   operator_id = "addon.example_operator"
-   if hasattr(bpy.ops.addon, "example_operator"):
-       print(f"✓ Operator '{operator_id}' is registered")
-   else:
-       print(f"✗ Operator '{operator_id}' NOT found")
-
-   # List all addon operators
-   addon_prefix = "addon."
-   addon_ops = [op for op in dir(bpy.ops.addon) if not op.startswith('_')]
-   print(f"Registered operators: {addon_ops}")
+   import sys, addon_utils
+   REPO = r"<absolute path of the repo root>"
+   MODULE = "<package>"
+   addon_utils.disable(MODULE, default_set=False)
+   for k in [k for k in sys.modules if k == MODULE or k.startswith(MODULE + ".")]:
+       del sys.modules[k]
+   if REPO not in sys.path:
+       sys.path.insert(0, REPO)
+   mod = addon_utils.enable(MODULE, default_set=False)
+   print("loaded from", mod.__file__ if mod else "FAILED")
    ```
-
-3. **Execute operator and capture result:**
-   ```python
-   # Execute via MCP
-   import bpy
-
-   # Set up test context
-   if bpy.context.active_object is None:
-       bpy.ops.mesh.primitive_cube_add()
-
-   # Run operator
-   try:
-       result = bpy.ops.addon.example_operator()
-       print(f"Operator result: {result}")
-   except Exception as e:
-       print(f"Operator error: {e}")
-
-   # Check for console errors
-   # (MCP should capture Blender console output)
-   ```
-
-4. **Verify operator effects:**
-   ```python
-   # Execute via MCP - check what changed
-   import bpy
-
-   obj = bpy.context.active_object
-   print(f"Active object: {obj.name if obj else 'None'}")
-   print(f"Selected objects: {[o.name for o in bpy.context.selected_objects]}")
-   print(f"Object count: {len(bpy.data.objects)}")
-   ```
-
-5. **Test panel rendering:**
-   ```python
-   # Execute via MCP
-   import bpy
-
-   # Check panel registration
-   panel_id = "VIEW3D_PT_addon_panel"
-   if panel_id in dir(bpy.types):
-       print(f"✓ Panel '{panel_id}' is registered")
-
-       # Get panel info
-       panel = getattr(bpy.types, panel_id)
-       print(f"  Label: {panel.bl_label}")
-       print(f"  Category: {panel.bl_category}")
-       print(f"  Space: {panel.bl_space_type}")
-   else:
-       print(f"✗ Panel '{panel_id}' NOT found")
-   ```
-
-6. **Monitor console output:**
-   - Capture any print statements
-   - Watch for warnings
-   - Report errors with tracebacks
-
-**Test workflow:**
-
-```
-┌─────────────────────────────────────────┐
-│  1. Verify MCP Connection               │
-│     └─> Get Blender version             │
-├─────────────────────────────────────────┤
-│  2. Check Addon Registration            │
-│     └─> List operators, panels          │
-├─────────────────────────────────────────┤
-│  3. Set Up Test Context                 │
-│     └─> Create test objects if needed   │
-├─────────────────────────────────────────┤
-│  4. Execute Operator                    │
-│     └─> Capture result and errors       │
-├─────────────────────────────────────────┤
-│  5. Verify Results                      │
-│     └─> Check scene changes             │
-├─────────────────────────────────────────┤
-│  6. Report                              │
-│     └─> Success/failure with details    │
-└─────────────────────────────────────────┘
-```
-
-**Error handling:**
-- Connection errors: Prompt to start MCP server
-- Operator errors: Show full traceback
-- Context errors: Suggest poll() fixes
-
-**Output:**
-- Connection status
-- Operator registration status
-- Execution result
-- Any console output/errors
-- Scene state changes
+4. Confirm every operator in `tests/test_blender_smoke.py` `OPERATORS` resolves (`getattr(getattr(bpy.ops, cat), name).get_rna_type()`).
+5. For each operator under test: set up the context, print state, run it, print state, note the return value and the report message. Try the edge cases that matter (nothing selected, wrong type, wrong mode).
+6. `mcp__blender__get_viewport_screenshot` when the result is visual.
+7. Report a table of operator, case, result, notes. List undo checks to do by hand. Offer to delete the scratch scene.

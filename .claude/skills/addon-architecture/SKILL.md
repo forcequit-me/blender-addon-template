@@ -1,502 +1,222 @@
 ---
 name: addon-architecture
-description: Patterns for structuring Blender addons — registration/unregistration order, multi-file layout, addon preferences, keymaps, and resource management. Triggers when starting a new addon, organizing multi-file addons, or implementing preferences.
+description: This template's layout and lifecycle for a Blender add-on - package files, bl_info and blender_manifest.toml, class tuple and registration order, AddonPreferences, the links footer sub-panel, handlers, keymaps, deferring bpy.data work out of register(), and storing references as PointerProperty with a migration for old name-only data. Use when adding a module, touching register()/unregister(), storing settings or object references, or debugging enable/disable errors.
 ---
 
-# Addon Architecture Patterns
+# Add-on architecture
 
-Expert knowledge for structuring Blender addons.
+## Folder
 
-## When to Use This Skill
-- Starting a new addon project
-- Organizing multi-file addons
-- Setting up addon preferences
-- Implementing keymaps
-- Managing addon resources
+```text
+<repo>/
+├── addon_name/             the package that gets installed; never rename it once shipped
+│   ├── __init__.py         bl_info, class tuple, register(), unregister(). Nothing else
+│   ├── blender_manifest.toml   extensions metadata; mirrors bl_info
+│   ├── operators.py
+│   ├── panels.py           main panel, UIList, links sub-panel, WEBSITE_URL, BUG_REPORT_URL
+│   ├── properties.py       PropertyGroups and their registration on Scene / WindowManager
+│   ├── preferences.py      AddonPreferences, pref() helper
+│   ├── constants.py        enum item lists, defaults      (when needed)
+│   ├── utils.py            shared logic, no bpy.types classes (when needed)
+│   ├── handlers.py         app handlers and timers        (when needed)
+│   └── keymaps.py          keymap items                   (when needed)
+├── build.py                python build.py package [--extension] [--clean]
+├── README.md
+├── docs/README Spec.md
+└── tests/test_blender_smoke.py
+```
 
-## Registration/Unregistration Patterns
+Never rename a shipped package: installed copies keep their preferences under it. No `compat.py` of version branches (see `blender-version-targeting`). When one file grows past a few hundred lines, turn it into a package (`operators/presets.py`, `operators/render.py`, `operators/__init__.py` exporting `classes`).
 
-### Basic Registration
+## bl_info and the manifest
+
 ```python
-# __init__.py
-import bpy
-
-from . import operators
-from . import panels
-from . import properties
-
 bl_info = {
-    "name": "My Addon",
-    "author": "Author",
-    "version": (1, 0, 0),
-    "blender": (4, 0, 0),
+    "name": "Addon Name",
+    "author": "Your Name",
+    "version": (0, 1, 0),
+    "blender": (5, 0, 0),
+    "location": "View3D > Sidebar > Addon Name",
+    "description": "One sentence saying what the add-on does for you",
     "category": "Object",
 }
+```
 
-classes = [
-    properties.MyProperties,
-    operators.MY_OT_operator,
-    panels.MY_PT_panel,
-]
+A legacy install reads `bl_info`; an extensions install reads `blender_manifest.toml` and ignores `bl_info`. Keep them in step: manifest `name`, `version` and `blender_version_min` match bl_info `name`, `version` and `blender`. The smoke test asserts this. The manifest `tagline` is the short form of `description`: at most 64 characters and no punctuation at the end (the validator rejects both, checked on 5.0). `python build.py version X.Y.Z` sets both versions at once.
+
+Blender deletes `bl_info` from an extension's module when it loads it (checked on 5.0: `hasattr(module, "bl_info")` is False). Code that reads it at run time, such as the version guard in `register()`, must use `globals().get("bl_info", {})`, never `bl_info[...]` directly.
+
+The legacy zip name is built from `name` and `version`. `description` is one user-facing sentence (`addon-writing`).
+
+## Registration
+
+One explicit tuple, in dependency order. Blender resolves `PointerProperty(type=X)` and `CollectionProperty(type=X)` at register time, so X must already be registered.
+
+```python
+import bpy
+
+from . import handlers, operators, panels, preferences, properties
+
+classes = (
+    properties.ADDON_NAME_ExcludeItem,     # item types before the groups that hold them
+    properties.ADDON_NAME_Properties,
+    preferences.ADDON_NAME_AddonPreferences,
+    *operators.classes,
+    panels.ADDON_NAME_UL_exclude_list,
+    panels.ADDON_NAME_PT_panel,            # parent panel before its sub-panels
+    panels.ADDON_NAME_PT_links,
+)
+
 
 def register():
+    minimum = globals().get("bl_info", {}).get("blender", (0, 0, 0))
+    if bpy.app.version < minimum:
+        raise RuntimeError(f"Addon Name requires Blender {minimum} or newer (found {bpy.app.version_string}).")
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.Scene.addon_name = bpy.props.PointerProperty(type=properties.ADDON_NAME_Properties)
+    handlers.register_handlers()           # handlers, header/menu appends, keymaps, timers last
 
-    # Register properties AFTER classes
-    bpy.types.Scene.my_props = bpy.props.PointerProperty(type=properties.MyProperties)
 
 def unregister():
-    # Unregister properties BEFORE classes
-    del bpy.types.Scene.my_props
-
+    handlers.unregister_handlers()         # exact reverse
+    del bpy.types.Scene.addon_name
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 ```
 
-### Auto-Registration Pattern
+Rules:
+
+- Class names follow `PREFIX_OT_name`, `PREFIX_PT_name`, `PREFIX_UL_name`, `PREFIX_MT_name`. `bl_idname` of an operator is `prefix.name`, lower case.
+- Prefer one `PointerProperty` to a PropertyGroup (`scene.addon_name.x`) over many loose `Scene.addon_name_x` properties. If a shipped add-on already uses loose ones, do not rewrite them: saved files hold those names.
+- `unregister()` must not raise before `unregister_class` runs, or the add-on cannot be re-enabled without restarting Blender. Guard every removal (`if fn in list`, `if bpy.app.timers.is_registered(fn)`, `try: header.remove(fn) except ValueError`).
+- Module globals survive disable and enable because the module stays in `sys.modules`. Reset caches and flags in `unregister()`.
+- Stop anything that can call back into the module first: running timers, modal batches, handlers.
+- Use relative imports (`from . import x`) only. An extensions install imports the package as `bl_ext.<repo>.addon_name`, so an absolute `import addon_name` breaks there.
+
+## Never touch bpy.data or the scene inside register()
+
+During `register()`, `bpy.data` is a restricted stand-in: `bpy.data.scenes` raises `AttributeError` (`_RestrictData`), checked on 5.0 and 5.2. `bpy.context` is limited too. Defer first-time setup to the first event-loop tick:
+
 ```python
-# __init__.py
-import bpy
-import importlib
-import inspect
+def _init_existing_scenes():
+    for scene in bpy.data.scenes:
+        init_scene(scene)
+    return None                            # None = run once
 
-from . import operators
-from . import panels
-from . import properties
-
-modules = [
-    properties,
-    operators,
-    panels,
-]
-
-def get_classes():
-    """Automatically find all registrable classes"""
-    classes = []
-    for module in modules:
-        for name, obj in inspect.getmembers(module):
-            if inspect.isclass(obj) and hasattr(obj, 'bl_idname'):
-                classes.append(obj)
-    return classes
-
-def register():
-    for module in modules:
-        importlib.reload(module)
-
-    for cls in get_classes():
-        bpy.utils.register_class(cls)
-
-def unregister():
-    for cls in reversed(get_classes()):
-        bpy.utils.unregister_class(cls)
+def register_handlers():
+    bpy.app.handlers.load_post.append(on_load)
+    bpy.app.timers.register(_init_existing_scenes, first_interval=0)
 ```
 
-### Safe Registration
+The user keyconfig and add-on preferences may also be incomplete at start-up. Build a keymap that depends on preferences from a `first_interval=0` timer for that reason.
+
+## Preferences
+
 ```python
-def register():
-    for cls in classes:
-        try:
-            bpy.utils.register_class(cls)
-        except ValueError as e:
-            print(f"Already registered: {cls.__name__}")
+class ADDON_NAME_AddonPreferences(bpy.types.AddonPreferences):
+    bl_idname = __package__                # the package name, whichever way it was installed
 
-def unregister():
-    for cls in reversed(classes):
-        try:
-            bpy.utils.unregister_class(cls)
-        except RuntimeError as e:
-            print(f"Not registered: {cls.__name__}")
-```
-
-## Multi-File Addon Organization
-
-### Recommended Structure
-```
-my_addon/
-├── __init__.py           # Registration and bl_info
-├── operators/
-│   ├── __init__.py       # Import all operators
-│   ├── mesh_ops.py       # Mesh operators
-│   └── object_ops.py     # Object operators
-├── panels/
-│   ├── __init__.py       # Import all panels
-│   └── main_panel.py     # Main UI panel
-├── properties/
-│   ├── __init__.py       # Import all properties
-│   └── scene_props.py    # Scene properties
-├── utils/
-│   ├── __init__.py
-│   └── helpers.py        # Utility functions
-├── compat.py             # Version compatibility
-└── constants.py          # Constants and enums
-```
-
-### Module __init__.py Pattern
-```python
-# operators/__init__.py
-from .mesh_ops import (
-    MESH_OT_custom_subdivide,
-    MESH_OT_custom_smooth,
-)
-from .object_ops import (
-    OBJECT_OT_custom_transform,
-)
-
-classes = [
-    MESH_OT_custom_subdivide,
-    MESH_OT_custom_smooth,
-    OBJECT_OT_custom_transform,
-]
-```
-
-### Main __init__.py
-```python
-# __init__.py
-import bpy
-
-from .operators import classes as operator_classes
-from .panels import classes as panel_classes
-from .properties import classes as property_classes
-
-bl_info = {...}
-
-def get_all_classes():
-    return property_classes + operator_classes + panel_classes
-
-def register():
-    for cls in get_all_classes():
-        bpy.utils.register_class(cls)
-
-    # Register scene properties
-    from .properties import scene_props
-    scene_props.register()
-
-def unregister():
-    from .properties import scene_props
-    scene_props.unregister()
-
-    for cls in reversed(get_all_classes()):
-        bpy.utils.unregister_class(cls)
-```
-
-## Addon Preferences
-
-### Basic Preferences
-```python
-class MyAddonPreferences(bpy.types.AddonPreferences):
-    bl_idname = __name__  # Must match addon module name
-
-    # Preference properties
-    default_value: bpy.props.FloatProperty(
-        name="Default Value",
-        default=1.0,
-    )
-
-    show_advanced: bpy.props.BoolProperty(
-        name="Show Advanced Options",
-        default=False,
-    )
-
-    install_path: bpy.props.StringProperty(
-        name="Install Path",
-        subtype='DIR_PATH',
+    show_in_header: bpy.props.BoolProperty(
+        name="Show in 3D View Header",
+        description="Show the Addon Name button in the 3D Viewport header",
+        default=True,
     )
 
     def draw(self, context):
         layout = self.layout
+        layout.prop(self, "show_in_header")
+        panels.draw_links(layout)          # the links row; draws nothing while the URLs are empty
 
-        layout.prop(self, "default_value")
-        layout.prop(self, "show_advanced")
-        layout.prop(self, "install_path")
 
-# Access preferences
-def get_preferences():
-    return bpy.context.preferences.addons[__name__].preferences
-
-# Usage
-prefs = get_preferences()
-value = prefs.default_value
+def pref(name, default=None):
+    """One preference value, or default when preferences are not available yet."""
+    try:
+        return getattr(bpy.context.preferences.addons[__package__].preferences, name)
+    except (KeyError, AttributeError):
+        return default
 ```
 
-### Preferences with Keymaps
+Always read preferences through a guarded helper keyed on `__package__`, never a hardcoded `"addon_name"`: an extensions install lives under `bl_ext.<repo>.addon_name`. `preferences.addons[__package__]` raises `KeyError` inside `register()` when the add-on is enabled from a script without `default_set=True` (checked), and during start-up ordering. This template gives every add-on an `AddonPreferences` class, even one with no settings, so the links row appears in its preferences.
+
+Where state lives:
+
+- `AddonPreferences`: global, per user. Defaults for new scenes, where the UI shows.
+- `Scene` (through a PropertyGroup): saved in the .blend, per scene. The user's working choices.
+- `WindowManager`: not saved, reset on file load. Session state such as a list mirrored from disk.
+
+To start new scenes from preference defaults, copy the preferences into the scene once per scene (keyed on `scene.as_pointer()`) from `load_post`, from a `depsgraph_update_post` backstop (Blender has no scene-created handler), and from the first-tick timer.
+
+## References: PointerProperty, not names
+
+Store objects and collections as pointers so they survive renames:
+
 ```python
-class MyAddonPreferences(bpy.types.AddonPreferences):
-    bl_idname = __name__
-
-    def draw(self, context):
-        layout = self.layout
-
-        # Draw addon preferences
-        layout.prop(self, "my_setting")
-
-        # Draw keymap
-        col = layout.column()
-        col.label(text="Keymap:")
-
-        wm = context.window_manager
-        kc = wm.keyconfigs.user
-        km = kc.keymaps.get("3D View")
-        if km:
-            for kmi in km.keymap_items:
-                if kmi.idname.startswith("my_addon"):
-                    col.context_pointer_set("keymap", km)
-                    rna_keymap_ui.draw_kmi([], kc, km, kmi, col, 0)
+class ADDON_NAME_ExcludeItem(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty()           # kept for old files and the "Missing:" label
+    is_collection: bpy.props.BoolProperty()
+    object: bpy.props.PointerProperty(type=bpy.types.Object)
+    collection: bpy.props.PointerProperty(type=bpy.types.Collection)
 ```
 
-## Keymap Registration
+Files saved before the pointer existed carry only `name`. Fill the pointer in on load, and fall back to the name until then:
 
-### Basic Keymap
+```python
+from bpy.app.handlers import persistent
+
+def migrate_excludes(scene):
+    for item in scene.addon_name.excludes:
+        if item.is_collection and item.collection is None:
+            item.collection = bpy.data.collections.get(item.name)
+        elif not item.is_collection and item.object is None:
+            item.object = bpy.data.objects.get(item.name)
+
+@persistent
+def on_load(_filepath):
+    for scene in bpy.data.scenes:
+        migrate_excludes(scene)
+```
+
+A pointer to a deleted ID reads `None`: draw it as `Missing: <name>` rather than dropping the row. A `PointerProperty` to an ID adds a user (checked: `users` goes 1 to 2), so a listed object never counts as orphan data. Keep that in mind in anything that counts users.
+
+## Handlers
+
+- Decorate with `@persistent` or Blender drops the handler on file load.
+- Append only if not already present, remove only if present. `Script > Reload` and double `register()` otherwise stack duplicates.
+- Handlers flag work; they do not do heavy work. `depsgraph_update_post` fires on every change.
+- Never write to properties from `draw()`. Backfills and migrations go in `load_post`.
+
+## Keymaps
+
 ```python
 addon_keymaps = []
 
 def register_keymaps():
-    wm = bpy.context.window_manager
-    kc = wm.keyconfigs.addon
-
-    if kc:
-        # Add keymap for 3D View
-        km = kc.keymaps.new(name="3D View", space_type='VIEW_3D')
-
-        # Add keymap item
-        kmi = km.keymap_items.new(
-            "my_addon.my_operator",
-            type='E',
-            value='PRESS',
-            shift=True,
-        )
-        # Store for unregistration
-        addon_keymaps.append((km, kmi))
+    kc = bpy.context.window_manager.keyconfigs.addon
+    if kc is None:                         # None in --background
+        return
+    km = kc.keymaps.new(name='Window', space_type='EMPTY')
+    kmi = km.keymap_items.new("addon_name.example", type='E', value='PRESS', shift=True, alt=True)
+    addon_keymaps.append((km, kmi))
 
 def unregister_keymaps():
     for km, kmi in addon_keymaps:
-        km.keymap_items.remove(kmi)
+        try:
+            km.keymap_items.remove(kmi)
+        except (ReferenceError, RuntimeError):
+            pass                           # keyconfig already torn down
     addon_keymaps.clear()
-
-def register():
-    # ... register classes ...
-    register_keymaps()
-
-def unregister():
-    unregister_keymaps()
-    # ... unregister classes ...
 ```
 
-### Context-Specific Keymaps
-```python
-# Different keymaps for different contexts
-keymaps_config = [
-    # (keymap_name, space_type, operator, key, modifiers)
-    ("3D View", 'VIEW_3D', "my.operator_3d", 'E', {'shift': True}),
-    ("Node Editor", 'NODE_EDITOR', "my.operator_nodes", 'E', {'shift': True}),
-    ("Image", 'IMAGE_EDITOR', "my.operator_image", 'E', {'shift': True}),
-]
+Build it from scratch each time (call `unregister_keymaps()` first) when a preference toggles it. Read the user's own bindings from `keyconfigs.user` rather than assuming defaults such as F12.
 
-def register_keymaps():
-    wm = bpy.context.window_manager
-    kc = wm.keyconfigs.addon
+## Menus and header
 
-    if kc:
-        for km_name, space_type, op_id, key, mods in keymaps_config:
-            km = kc.keymaps.new(name=km_name, space_type=space_type)
-            kmi = km.keymap_items.new(op_id, type=key, value='PRESS', **mods)
-            addon_keymaps.append((km, kmi))
-```
+`bpy.types.VIEW3D_MT_object.append(draw_fn)` in `register`, `.remove(draw_fn)` in `unregister`. Header draw functions run in enable order. Do not remove and re-append other add-ons' draw functions to fix the order: that touches other add-ons, which the extensions platform forbids (rule 3.9).
 
-## Resource Management
+## Every add-on also needs
 
-### Custom Icons
-```python
-import os
-import bpy.utils.previews
-
-preview_collections = {}
-
-def register_icons():
-    pcoll = bpy.utils.previews.new()
-
-    # Path to icons folder
-    icons_dir = os.path.join(os.path.dirname(__file__), "icons")
-
-    # Load icons
-    pcoll.load("my_icon", os.path.join(icons_dir, "my_icon.png"), 'IMAGE')
-    pcoll.load("another_icon", os.path.join(icons_dir, "another.png"), 'IMAGE')
-
-    preview_collections["main"] = pcoll
-
-def unregister_icons():
-    for pcoll in preview_collections.values():
-        bpy.utils.previews.remove(pcoll)
-    preview_collections.clear()
-
-# Usage in draw
-def draw(self, context):
-    pcoll = preview_collections["main"]
-    my_icon = pcoll["my_icon"]
-    layout.operator("my.operator", icon_value=my_icon.icon_id)
-```
-
-### Asset Files
-```python
-import os
-
-def get_addon_path():
-    """Get path to addon directory"""
-    return os.path.dirname(os.path.realpath(__file__))
-
-def get_asset_path(filename):
-    """Get path to asset file"""
-    return os.path.join(get_addon_path(), "assets", filename)
-
-def load_preset(preset_name):
-    """Load a preset file"""
-    preset_path = get_asset_path(f"presets/{preset_name}.json")
-    if os.path.exists(preset_path):
-        with open(preset_path, 'r') as f:
-            return json.load(f)
-    return None
-```
-
-## Internationalization (i18n)
-
-### Translation Setup
-```python
-import bpy
-from bpy.app.translations import pgettext as _
-
-# Translation dictionary
-translations = {
-    "en_US": {
-        ("*", "My Operator"): "My Operator",
-        ("*", "Execute the operation"): "Execute the operation",
-    },
-    "ja_JP": {
-        ("*", "My Operator"): "マイオペレーター",
-        ("*", "Execute the operation"): "操作を実行",
-    },
-}
-
-def register_translations():
-    bpy.app.translations.register(__name__, translations)
-
-def unregister_translations():
-    bpy.app.translations.unregister(__name__)
-
-# Usage
-class MY_OT_operator(bpy.types.Operator):
-    bl_label = _("My Operator")
-    bl_description = _("Execute the operation")
-```
-
-## Menu Integration
-
-### Append to Existing Menu
-```python
-def draw_menu(self, context):
-    layout = self.layout
-    layout.separator()
-    layout.operator("my.operator")
-
-def register():
-    # ... register classes ...
-    bpy.types.VIEW3D_MT_object.append(draw_menu)
-
-def unregister():
-    bpy.types.VIEW3D_MT_object.remove(draw_menu)
-    # ... unregister classes ...
-```
-
-### Custom Menu
-```python
-class MY_MT_menu(bpy.types.Menu):
-    bl_label = "My Menu"
-    bl_idname = "MY_MT_menu"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.operator("my.operator1")
-        layout.operator("my.operator2")
-        layout.separator()
-        layout.menu("MY_MT_submenu")
-
-# Add to header
-def draw_header_menu(self, context):
-    self.layout.menu("MY_MT_menu")
-
-def register():
-    bpy.types.VIEW3D_HT_header.append(draw_header_menu)
-```
-
-## Addon State Management
-
-### Persistent Data
-```python
-from bpy.app.handlers import persistent
-
-@persistent
-def load_handler(dummy):
-    """Called when blend file is loaded"""
-    # Restore addon state
-    pass
-
-@persistent
-def save_handler(dummy):
-    """Called before blend file is saved"""
-    # Save addon state
-    pass
-
-def register():
-    bpy.app.handlers.load_post.append(load_handler)
-    bpy.app.handlers.save_pre.append(save_handler)
-
-def unregister():
-    bpy.app.handlers.load_post.remove(load_handler)
-    bpy.app.handlers.save_pre.remove(save_handler)
-```
-
-### Scene-Level State
-```python
-class AddonState(bpy.types.PropertyGroup):
-    is_active: bpy.props.BoolProperty(default=False)
-    current_mode: bpy.props.StringProperty(default="DEFAULT")
-
-def register():
-    bpy.utils.register_class(AddonState)
-    bpy.types.Scene.addon_state = bpy.props.PointerProperty(type=AddonState)
-
-def unregister():
-    del bpy.types.Scene.addon_state
-    bpy.utils.unregister_class(AddonState)
-
-# Usage
-state = bpy.context.scene.addon_state
-state.is_active = True
-```
-
-## Best Practices
-
-### Module Organization
-- Keep `__init__.py` focused on registration
-- Separate concerns into modules
-- Use explicit imports over wildcards
-- Document module responsibilities
-
-### Registration Order
-1. Property groups (referenced by other classes)
-2. Operators
-3. Panels and menus
-4. Scene/object properties
-5. Keymaps
-6. Handlers
-
-### Unregistration Order
-Reverse of registration order.
-
-### Error Handling
-- Catch registration errors gracefully
-- Provide helpful error messages
-- Clean up partial registration on failure
-
-## Resources
-- Addon Tutorial: https://docs.blender.org/api/current/info_tutorial_addon.html
-- Best Practices: https://docs.blender.org/api/current/info_best_practice.html
+- `tests/test_blender_smoke.py`: enables through `addon_utils.enable(MODULE, default_set=True)`, checks every operator with `bpy.ops.<cat>.<name>.get_rna_type()`, checks bl_info against the manifest, disables, enables again, prints `SMOKE OK`. Keep `OPERATORS` in step with every `bl_idname`.
+- `ADDON_FOLDER` in `build.py` set to the package name.
+- The links sub-panel and preferences row (`blender-ui-patterns`), for legacy builds only.
+- README to the spec (`addon-writing`).

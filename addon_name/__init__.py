@@ -1,55 +1,53 @@
-# Dual-mode addon: `bl_info` below loads in Blender 3.6 – 4.1 (legacy addon path).
-# In Blender 4.2+ the adjacent `blender_manifest.toml` takes precedence and this
-# file is loaded as an extension. Keep both in sync — see docs/EXTENSION_MIGRATION.md.
+# Keep "name", "version" and "blender" in step with blender_manifest.toml.
+# The smoke test and `python build.py validate` fail when they drift apart.
 bl_info = {
     "name": "Addon Name",
     "author": "Your Name",
-    "version": (1, 0, 0),
-    "blender": (3, 6, 0),
-    "location": "View3D > Sidebar > Addon Tab",
-    "description": "Brief description of what this addon does",
-    "warning": "",
-    "doc_url": "",
-    "category": "Object",
+    "version": (0, 1, 0),
+    "blender": (5, 0, 0),
+    "location": "View3D > Sidebar > Addon Name",
+    "description": "PLACEHOLDER: one sentence saying what the add-on does, in the user's words",
+    "category": "3D View",
 }
 
 import bpy
 
+from . import properties
+from . import preferences
 from . import operators
 from . import panels
-from . import properties
 
 
-# Collect all classes for registration
-classes = [
-    properties.AddonProperties,
-    operators.ADDON_OT_example_operator,
-    panels.VIEW3D_PT_addon_panel,
-]
+classes = (
+    properties.ADDON_NAME_Properties,
+    preferences.ADDON_NAME_AddonPreferences,
+    operators.ADDON_NAME_OT_example,
+    panels.ADDON_NAME_PT_panel,
+    panels.ADDON_NAME_PT_links,
+)
 
 
 def register():
-    """Register all addon classes and properties."""
+    # Blender enables a legacy add-on below its minimum version with only a warning,
+    # so refuse here instead of failing later on a missing API. Extensions need no check:
+    # Blender will not install one below blender_version_min, and it deletes bl_info from
+    # an extension's module, hence globals().get().
+    minimum = globals().get("bl_info", {}).get("blender", (0, 0, 0))
+    if bpy.app.version < minimum:
+        raise RuntimeError(
+            f"Addon Name requires Blender {'.'.join(map(str, minimum))} or newer. "
+            f"You are running {'.'.join(map(str, bpy.app.version))}."
+        )
     for cls in classes:
         bpy.utils.register_class(cls)
-
-    # Register properties
-    bpy.types.Scene.addon_props = bpy.props.PointerProperty(type=properties.AddonProperties)
-
-    print(f"{bl_info['name']} v{'.'.join(map(str, bl_info['version']))} registered")
+    bpy.types.Scene.addon_name = bpy.props.PointerProperty(type=properties.ADDON_NAME_Properties)
+    # Never touch bpy.data in register(): it raises _RestrictData errors.
+    # If you need first-time scene setup, defer it:
+    #     bpy.app.timers.register(setup_fn, first_interval=0)
 
 
 def unregister():
-    """Unregister all addon classes and properties."""
-    # Unregister properties first
-    del bpy.types.Scene.addon_props
-
-    # Unregister classes in reverse order
+    if hasattr(bpy.types.Scene, "addon_name"):
+        del bpy.types.Scene.addon_name
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-
-    print(f"{bl_info['name']} unregistered")
-
-
-if __name__ == "__main__":
-    register()

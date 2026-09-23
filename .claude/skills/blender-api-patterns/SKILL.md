@@ -1,445 +1,148 @@
 ---
 name: blender-api-patterns
-description: Core Blender Python API (bpy) patterns — context access, data manipulation, operators, panels, properties, update callbacks, modal operators. Use when writing or reviewing any bpy code, especially when avoiding common API pitfalls.
+description: Core bpy patterns for Blender 5.0+ - context versus data, operator structure (poll, invoke, execute, report, UNDO), properties and update callbacks, context overrides, saving and restoring selection, removing data, and the API traps that crash or misbehave. Use when writing or reviewing any bpy code.
 ---
 
-# Blender Python API Patterns
+# Blender API patterns (5.0+)
 
-Expert knowledge for working with the Blender Python API (bpy).
+Reference: https://docs.blender.org/api/current/ and the gotchas page https://docs.blender.org/api/current/info_gotcha.html
 
-## When to Use This Skill
-- Accessing Blender data and context
-- Creating operators, panels, and properties
-- Working with update callbacks
-- Using modal operators for interaction
-- Avoiding common API pitfalls
+## Context versus data
 
-## Context Access Patterns
+- `context` is what the user is looking at: `context.scene`, `context.view_layer`, `context.active_object`, `context.selected_objects`, `context.mode`. Take it from the `context` argument, not `bpy.context`, inside operators, panels and callbacks.
+- `bpy.data` is everything in the file. `bpy.data.objects.get(name)` returns `None`; `bpy.data.objects[name]` raises `KeyError`.
+- Prefer direct data access over `bpy.ops`. Operators depend on context, selection and mode, add undo steps and are slow in loops. `obj.modifiers.new("Subdivision", 'SUBSURF')`, not `bpy.ops.object.modifier_add`.
+- Use `bpy.ops` when Blender's operator does real work you would otherwise re-implement (for example `object.parent_set` and its parent types). Save and restore the selection around it.
 
-### bpy.context - Current State
+## Operator
+
 ```python
-import bpy
-
-# Active/selected objects
-active = bpy.context.active_object
-selected = bpy.context.selected_objects
-
-# Current mode
-mode = bpy.context.mode  # 'OBJECT', 'EDIT_MESH', etc.
-
-# Current scene and view layer
-scene = bpy.context.scene
-view_layer = bpy.context.view_layer
-
-# Preferences
-prefs = bpy.context.preferences
-
-# Window/screen (for UI operations)
-window = bpy.context.window
-screen = bpy.context.screen
-area = bpy.context.area
-```
-
-### bpy.data - All Blend File Data
-```python
-import bpy
-
-# Access all data of specific type
-objects = bpy.data.objects
-meshes = bpy.data.meshes
-materials = bpy.data.materials
-images = bpy.data.images
-node_groups = bpy.data.node_groups
-
-# Get specific item by name
-obj = bpy.data.objects.get("Cube")  # Returns None if not found
-obj = bpy.data.objects["Cube"]  # Raises KeyError if not found
-
-# Create new data
-mesh = bpy.data.meshes.new("NewMesh")
-material = bpy.data.materials.new("NewMaterial")
-
-# Remove data
-bpy.data.objects.remove(obj)
-bpy.data.meshes.remove(mesh)
-```
-
-### Context Override (Temporary Context)
-```python
-import bpy
-
-# Override context for specific operations
-override = bpy.context.copy()
-override['selected_objects'] = [obj1, obj2]
-override['active_object'] = obj1
-
-# Blender 3.2+
-with bpy.context.temp_override(**override):
-    bpy.ops.object.duplicate()
-
-# Legacy (pre-3.2)
-# bpy.ops.object.duplicate(override)
-```
-
-## Operator Design Patterns
-
-### Standard Operator
-```python
-class OBJECT_OT_my_operator(bpy.types.Operator):
-    """Tooltip shown on hover"""
-    bl_idname = "object.my_operator"
-    bl_label = "My Operator"
-    bl_description = "Detailed description"
+class ADDON_NAME_OT_delete_empties(bpy.types.Operator):
+    """Delete every empty of the ticked types in the whole file, skipping the exclude list"""
+    bl_idname = "addon_name.delete_empties"
+    bl_label = "Delete Empties"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
-        return context.active_object is not None
+        return context.mode == 'OBJECT'
 
     def execute(self, context):
-        # Main logic
-        return {'FINISHED'}
-```
-
-### Operator with Properties
-```python
-class OBJECT_OT_parameterized(bpy.types.Operator):
-    bl_idname = "object.parameterized"
-    bl_label = "Parameterized Operator"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    # Properties shown in operator panel/popup
-    amount: bpy.props.FloatProperty(
-        name="Amount",
-        default=1.0,
-        min=0.0,
-        max=10.0,
-    )
-
-    axis: bpy.props.EnumProperty(
-        name="Axis",
-        items=[
-            ('X', "X", "X axis"),
-            ('Y', "Y", "Y axis"),
-            ('Z', "Z", "Z axis"),
-        ],
-        default='Z',
-    )
-
-    def invoke(self, context, event):
-        # Show properties dialog before executing
-        return context.window_manager.invoke_props_dialog(self)
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(self, "amount")
-        layout.prop(self, "axis")
-
-    def execute(self, context):
-        obj = context.active_object
-        axis_index = {'X': 0, 'Y': 1, 'Z': 2}[self.axis]
-        obj.location[axis_index] += self.amount
-        return {'FINISHED'}
-```
-
-### Modal Operator
-```python
-class OBJECT_OT_modal_move(bpy.types.Operator):
-    bl_idname = "object.modal_move"
-    bl_label = "Modal Move"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def __init__(self):
-        self.initial_location = None
-        self.initial_mouse = None
-
-    def modal(self, context, event):
-        if event.type == 'MOUSEMOVE':
-            delta = event.mouse_x - self.initial_mouse[0]
-            context.active_object.location.x = self.initial_location[0] + delta * 0.01
-            return {'RUNNING_MODAL'}
-
-        elif event.type == 'LEFTMOUSE' and event.value == 'PRESS':
-            return {'FINISHED'}
-
-        elif event.type in {'RIGHTMOUSE', 'ESC'}:
-            context.active_object.location = self.initial_location
+        props = context.scene.addon_name
+        doomed = [o for o in bpy.data.objects if o.type == 'EMPTY' and wanted(o, props)]
+        if not doomed:
+            self.report({'WARNING'}, "No empties of the ticked types")
             return {'CANCELLED'}
-
-        return {'PASS_THROUGH'}
-
-    def invoke(self, context, event):
-        if context.active_object:
-            self.initial_location = context.active_object.location.copy()
-            self.initial_mouse = (event.mouse_x, event.mouse_y)
-            context.window_manager.modal_handler_add(self)
-            return {'RUNNING_MODAL'}
-        return {'CANCELLED'}
+        bpy.data.batch_remove(doomed)
+        self.report({'INFO'}, f"Removed {len(doomed)} empties")
+        return {'FINISHED'}
 ```
 
-## Property Definition Patterns
+- `{'UNDO'}` on every operator that changes file data. `'REGISTER'` adds it to the redo panel and the Info log. `'INTERNAL'` hides it from F3 search (for row buttons and menu entries).
+- Return `{'CANCELLED'}` when nothing changed, so no empty undo step is pushed.
+- `poll()` is cheap and never reports; it greys the button. Use it for mode and object type. Use a `WARNING` report in `execute` for "nothing to do".
+- Row buttons pass which item via an `IntProperty` (`op.index = index`); keep that property out of saved presets with `options={'SKIP_SAVE'}` where it matters.
+- Confirm dialogs and previews: `blender-ui-patterns`.
+- `__init__` on an operator must take and pass arguments, or it fails in 5.0 with `TypeError: __init__() takes 1 positional argument but 2 were given` (checked). Usually you do not need one: set state in `invoke`.
 
-### Basic Properties
 ```python
-from bpy.props import (
-    IntProperty, FloatProperty, BoolProperty,
-    StringProperty, EnumProperty,
-    FloatVectorProperty, IntVectorProperty,
-    PointerProperty, CollectionProperty,
-)
-
-class MyProperties(bpy.types.PropertyGroup):
-    # Numeric
-    count: IntProperty(name="Count", default=1, min=0, max=100)
-    value: FloatProperty(name="Value", default=0.0, precision=3)
-
-    # Boolean
-    enabled: BoolProperty(name="Enabled", default=True)
-
-    # String
-    name: StringProperty(name="Name", default="", maxlen=64)
-    path: StringProperty(name="Path", subtype='FILE_PATH')
-
-    # Enum
-    mode: EnumProperty(
-        name="Mode",
-        items=[
-            ('MODE_A', "Mode A", "First mode", 'MESH_CUBE', 0),
-            ('MODE_B', "Mode B", "Second mode", 'MESH_UVSPHERE', 1),
-        ],
-    )
-
-    # Vectors
-    location: FloatVectorProperty(name="Location", size=3)
-    color: FloatVectorProperty(name="Color", subtype='COLOR', size=4, min=0, max=1)
+def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self._timer = None
 ```
 
-### Collection Properties
+## Properties
+
 ```python
-class MyItem(bpy.types.PropertyGroup):
-    name: StringProperty(name="Name")
-    value: FloatProperty(name="Value")
-
-class MySettings(bpy.types.PropertyGroup):
-    items: CollectionProperty(type=MyItem)
-    active_index: IntProperty()
-
-# Usage
-settings = context.scene.my_settings
-item = settings.items.add()
-item.name = "New Item"
-item.value = 1.0
-
-# Remove item
-settings.items.remove(settings.active_index)
+class ADDON_NAME_Properties(bpy.types.PropertyGroup):
+    show_settings: bpy.props.BoolProperty(name="Settings", default=False,
+        description="Show the settings that change what Delete Empties removes")
+    mode: bpy.props.EnumProperty(name="Mode", items=(
+        ('SELECTED', "Selected", "Only the selected objects"),
+        ('ALL', "All", "Every object in the scene"),
+    ), default='SELECTED')
+    target: bpy.props.PointerProperty(type=bpy.types.Object,
+        poll=lambda self, obj: obj.type == 'EMPTY')
 ```
 
-### Update Callbacks
-```python
-def on_value_changed(self, context):
-    """Called when property changes"""
-    print(f"Value changed to: {self.my_value}")
-    # Trigger viewport update if needed
-    context.area.tag_redraw()
+- References to objects, collections, materials: `PointerProperty`, never a name string (`addon-architecture`).
+- Paths: `StringProperty(subtype='DIR_PATH')` or `'FILE_PATH'`; a render output path also takes `options={'OUTPUT_PATH'}` to behave like Blender's own output field.
+- Dynamic enum `items=callback`: keep the returned strings alive in a module-level list, or Blender shows garbage labels.
+- Get/set accessors let a scene value fall back to a preference default until the user sets it.
 
-class MyProperties(bpy.types.PropertyGroup):
-    my_value: FloatProperty(
-        name="Value",
-        update=on_value_changed,
-    )
+### Update callbacks
+
+```python
+_suppress = False
+
+def _on_name_change(self, context):
+    global _suppress
+    if _suppress:
+        return
+    _suppress = True
+    try:
+        self.name = unique_name(self.name)   # writing back would re-enter without the guard
+    finally:
+        _suppress = False
 ```
 
-### Pointer Properties
-```python
-class MyProperties(bpy.types.PropertyGroup):
-    target_object: PointerProperty(
-        name="Target",
-        type=bpy.types.Object,
-        poll=lambda self, obj: obj.type == 'MESH',  # Filter
-    )
+- Update callbacks run on every change, including your own code setting the property. Guard with a module flag when code writes the value.
+- They run outside the operator system: no undo step of their own. Keep them small.
+- `context` can be incomplete; do not assume `context.area`.
 
-    target_material: PointerProperty(
-        name="Material",
-        type=bpy.types.Material,
-    )
+## Context override
+
+```python
+with context.temp_override(area=area, region=region, space_data=area.spaces.active):
+    bpy.ops.outliner.item_activate()
 ```
 
-## Draw Functions and UI Layouts
+The old dict-as-first-argument override is gone. Reading Outliner selection (`context.selected_ids`) needs an override to an Outliner area.
 
-### Layout Types
+## Save and restore selection around operators
+
 ```python
-def draw(self, context):
-    layout = self.layout
-
-    # Column - vertical stack
-    col = layout.column(align=True)
-    col.prop(obj, "location")
-    col.prop(obj, "rotation_euler")
-
-    # Row - horizontal stack
-    row = layout.row(align=True)
-    row.operator("object.select_all").action = 'SELECT'
-    row.operator("object.select_all").action = 'DESELECT'
-
-    # Box - framed section
-    box = layout.box()
-    box.label(text="Section Title")
-    box.prop(obj, "name")
-
-    # Split - proportional columns
-    split = layout.split(factor=0.3)
-    split.label(text="Label:")
-    split.prop(obj, "name", text="")
-
-    # Grid flow
-    grid = layout.grid_flow(columns=3, even_columns=True)
-    for i in range(9):
-        grid.operator("mesh.primitive_cube_add", text=str(i))
-```
-
-### Property Widgets
-```python
-def draw(self, context):
-    layout = self.layout
-    obj = context.active_object
-
-    # Standard property
-    layout.prop(obj, "name")
-
-    # Without label
-    layout.prop(obj, "name", text="")
-
-    # Expand enum
-    layout.prop(obj, "display_type", expand=True)
-
-    # Slider
-    layout.prop(obj, "scale", slider=True)
-
-    # Icon only
-    layout.prop(obj, "hide_viewport", icon_only=True)
-
-    # Search (for pointers)
-    layout.prop_search(props, "target_object", bpy.data, "objects")
-
-    # Template list
-    layout.template_list("UI_UL_list", "", props, "items", props, "active_index")
-```
-
-## Common Pitfalls and Solutions
-
-### Pitfall: Accessing Invalid Context
-```python
-# BAD - context may be None in some situations
-def execute(self, context):
-    obj = context.active_object  # Could be None!
-    obj.location.z = 1.0  # AttributeError!
-
-# GOOD - always check
-def execute(self, context):
-    obj = context.active_object
-    if obj is None:
-        self.report({'WARNING'}, "No active object")
-        return {'CANCELLED'}
-    obj.location.z = 1.0
-    return {'FINISHED'}
-```
-
-### Pitfall: Data Access After Deletion
-```python
-# BAD - accessing removed object
-obj = bpy.context.active_object
-bpy.data.objects.remove(obj)
-print(obj.name)  # ReferenceError!
-
-# GOOD - don't access after removal
-obj_name = obj.name
-bpy.data.objects.remove(obj)
-print(f"Removed: {obj_name}")
-```
-
-### Pitfall: Modifying Data in Draw
-```python
-# BAD - modifying data in draw causes infinite loop
-def draw(self, context):
-    context.scene.my_value = 5  # WRONG!
-
-# GOOD - only read data in draw
-def draw(self, context):
-    layout = self.layout
-    layout.label(text=str(context.scene.my_value))
-```
-
-### Pitfall: Missing BMesh Free
-```python
-# BAD - memory leak
-bm = bmesh.new()
-bm.from_mesh(mesh)
-# ... operations ...
-bm.to_mesh(mesh)
-# Forgot bm.free()!
-
-# GOOD - always free
-bm = bmesh.new()
+active = context.view_layer.objects.active
+selected = list(context.selected_objects)
 try:
-    bm.from_mesh(mesh)
-    # ... operations ...
-    bm.to_mesh(mesh)
+    for o in context.selected_objects:
+        o.select_set(False)
+    ...                                        # bpy.ops call on a chosen selection
 finally:
-    bm.free()
+    for o in selected:
+        if o.name in context.view_layer.objects:
+            o.select_set(True)
+    context.view_layer.objects.active = active
 ```
 
-### Pitfall: Circular Imports
+## Removing data
+
+- `bpy.data.objects.remove(obj, do_unlink=True)` for one; `bpy.data.batch_remove(ids)` for many (much faster).
+- After removal the Python object is dead. Touching it raises `ReferenceError`. Read `obj.name` first if you need it for the report.
+- Never remove while iterating the same collection: collect first, then remove.
+- `bpy.data.orphans_purge(do_local_ids=, do_linked_ids=, do_recursive=)` removes unused data blocks, the same as File > Clean Up.
+- `ID.users` counts add-on `PointerProperty` references too.
+
+## Traps
+
+- **Stored Python references go stale** after undo, redo, file load, and adding to some collections (e.g. `mesh.vertices.add`, `collection.add()` can reallocate). Store names or pointers in properties, look objects up again, and catch `ReferenceError`.
+- **Never write data in `draw()`** or in a `poll()`.
+- **Nodes: find by type, never by name.** Names are translated on non-English UIs. `next(n for n in tree.nodes if n.type == 'BSDF_PRINCIPLED')`.
+- **Socket names change between releases.** Look sockets up by identifier or check with `describe_node_type` (MCP) before indexing.
+- **`Material.use_nodes` is deprecated** in 5.0 (warning says removal in 6.0). New materials already have a node tree; do not set it.
+- **Colours on materials** go on the shader node inputs. `material.diffuse_color` is viewport display only.
+- **Enum identifiers:** read them from `bl_rna`, do not hardcode (`blender-version-targeting`).
+- **Mode:** mesh data read in Edit Mode is stale until `obj.update_from_editmode()`; many data edits require Object Mode. Check `context.mode` in `poll`.
+- **Linked data** is read-only. Check `id.library` (and `id.override_library`) before editing.
+- **BMesh:** always `bm.free()` in a `finally`.
+- **Paths:** `bpy.path.abspath()` for `//` relative paths; an unsaved file has no `//` base. Never hardcode a user folder: use `bpy.utils.user_resource()` or, for an extension, `bpy.utils.extension_path_user(__package__, create=True)`, which an extension should use instead of writing into its own folder.
+
+## Registration of loose properties
+
 ```python
-# BAD - __init__.py
-from .operators import *  # Imports everything
-from .panels import *     # panels.py imports from operators
-
-# GOOD - explicit imports
-from .operators import MY_OT_operator
-from .panels import MY_PT_panel
+bpy.types.Scene.addon_name = bpy.props.PointerProperty(type=ADDON_NAME_Properties)
+...
+del bpy.types.Scene.addon_name
 ```
 
-## Registration Patterns
-
-### Standard Registration
-```python
-classes = [
-    MyPropertyGroup,
-    MY_OT_operator,
-    MY_PT_panel,
-]
-
-def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
-    bpy.types.Scene.my_props = PointerProperty(type=MyPropertyGroup)
-
-def unregister():
-    del bpy.types.Scene.my_props
-    for cls in reversed(classes):
-        bpy.utils.unregister_class(cls)
-```
-
-### Conditional Registration
-```python
-def register():
-    for cls in classes:
-        try:
-            bpy.utils.register_class(cls)
-        except ValueError:
-            # Already registered
-            pass
-
-def unregister():
-    for cls in reversed(classes):
-        try:
-            bpy.utils.unregister_class(cls)
-        except RuntimeError:
-            # Not registered
-            pass
-```
-
-## Resources
-- API Reference: https://docs.blender.org/api/current/
-- Best Practices: https://docs.blender.org/api/current/info_best_practice.html
-- Tips & Tricks: https://docs.blender.org/api/current/info_tips_and_tricks.html
+Full register and unregister order: `addon-architecture`.

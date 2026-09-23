@@ -1,451 +1,132 @@
-# Blender Addon Template - Quick Start Guide
+# Blender Add-on Template for Claude Code
 
-A complete Claude Code workflow for Blender addon development with live testing, API validation, and automated code generation.
+A starting point for a Blender 5.0+ add-on, with a Claude Code dev kit that builds, tests and checks it for you.
 
----
+You get a small working add-on (one operator, a sidebar panel, preferences, a headless smoke test), a build script that makes both a legacy zip and an extension zip, and a `.claude/` folder of slash commands, skills, agents and hooks that know how this project is laid out.
+
+Once you run `/setup-addon`, this README is replaced by your add-on's own README, `ADDON_README.md`. Until then, `build.py` ships `ADDON_README.md` in the zip, never this file. Its structure is explained in `docs/README Spec.md`.
 
 ## Prerequisites
 
-Before using this template, ensure you have:
+- [Claude Code](https://docs.claude.com/en/docs/claude-code/overview)
+- Blender 5.0 or newer. Two versions installed is best, the oldest you support and the newest, so you can test both.
+- Python 3.10 or newer on your PATH, to run `build.py` and the hooks.
+- Optional: the [Blender MCP server](https://github.com/ahujasid/blender-mcp) for live testing in a running Blender. It needs [uv](https://docs.astral.sh/uv/) (for `uvx`) and the Blender MCP add-on enabled in Blender. The live commands (`/test-in-blender`, `/live-dev`, `/inspect-scene`, `/create-test-scene`) need it; everything else works without it.
 
-- [ ] **Claude Code** installed and configured
-- [ ] **Blender** 3.6+ installed
-- [ ] **Python** 3.10+ (comes with Blender)
-- [ ] **Blender MCP Server** (optional, for live testing) - [Setup Guide](https://github.com/ahujasid/blender-mcp)
+## Quick start
 
----
+1. Copy this folder, or use it as a GitHub template, and name the copy after your add-on.
+2. Open `CLAUDE.md` and set the two Blender paths under "Blender installs" for your machine.
+3. Open the folder in Claude Code and run `/setup-blender-dev` to check your machine has what it needs.
+4. Run `/setup-addon`. It asks for your add-on's name and renames the placeholders (`addon_name`, `ADDON_NAME_`, `Addon Name`, `Your Name`) everywhere, including the folder.
+5. Run `/test-addon`. The smoke test must print `SMOKE OK` on both Blenders.
+6. Build something: `/new-operator`, `/new-panel`, or just describe what you want.
+7. `/check-addon` before you ship, then `/build`.
 
-## Quick Start (5 Steps)
-
-```
-1. Copy template    →  Copy `blender-addon-template/` to your project folder
-2. Rename addon     →  Rename `addon_name/` folder to your addon name
-3. Update bl_info   →  Edit `__init__.py` with your addon details
-4. Create operator  →  Run `/new-operator` in Claude Code
-5. Test in Blender  →  Run `/test-in-blender` or install manually
-```
-
----
-
-## Command Cheat Sheet
-
-### Development Commands
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/new-operator` | Create operator with boilerplate | Adding new functionality |
-| `/new-panel` | Create UI panel | Adding user interface |
-| `/setup-blender-dev` | Initialize dev environment | Starting fresh project |
-| `/add-performance-metrics` | Add timing instrumentation | Profiling slow operators |
-
-### Testing Commands
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/test-addon` | Reload and validate addon | After code changes |
-| `/test-in-blender` | Live test via MCP | Real-time testing (requires MCP) |
-| `/inspect-scene` | Query scene state via MCP | Debugging context issues |
-| `/create-test-scene` | Setup test environment | Automated testing |
-| `/live-dev` | Interactive dev mode | Continuous development |
-
-### Compatibility Commands
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/check-compatibility` | Scan for deprecated APIs | Before release |
-| `/upgrade-addon` | Update to newer Blender | Version migration |
-| `/add-version-support` | Add multi-version support | Supporting older Blender |
-| `/compare-api-versions` | Compare APIs across versions | Understanding changes |
-
-### Documentation Commands
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/docs-lookup` | Search Blender docs | Learning API |
-| `/api-example` | Find code examples | Need working snippets |
-
-### Release & Build Commands
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/build` | Package addon (uses build.py) | Creating distribution ZIP |
-| `/bump-version` | Bump version + update changelog | Before releasing |
-| `/update-changelog` | Update CHANGELOG.md | Documenting changes |
-| `/release` | Full release workflow | Complete release process |
-| `/package-addon` | Create distribution ZIP | Quick packaging |
-
-### build.py CLI Commands
-
-You can also use build.py directly from the terminal:
-
-```bash
-python build.py package              # Create distribution ZIP
-python build.py package --clean      # Clean first, then package
-python build.py validate             # Validate addon structure
-python build.py version              # Show current version
-python build.py version 1.2.0        # Set specific version
-python build.py version --bump patch # Bump patch (1.0.0 → 1.0.1)
-python build.py version --bump minor # Bump minor (1.0.0 → 1.1.0)
-python build.py version --bump major # Bump major (1.0.0 → 2.0.0)
-python build.py clean                # Remove build artifacts
-```
-
----
-
-## Workflow Diagrams
-
-### New Feature Workflow
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  /new-operator  │ ──► │ /test-in-blender│ ──► │/check-compat    │
-│  Create code    │     │ Live testing    │     │ Verify support  │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-                                                        │
-                                                        ▼
-                                                ┌─────────────────┐
-                                                │ /package-addon  │
-                                                │ Release ZIP     │
-                                                └─────────────────┘
-```
-
-### Version Upgrade Workflow
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│/check-compat    │ ──► │/compare-api-    │ ──► │ /upgrade-addon  │
-│ Find issues     │     │ versions        │     │ Apply fixes     │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-                                                        │
-                                                        ▼
-                                                ┌─────────────────┐
-                                                │ /test-addon     │
-                                                │ Verify fixes    │
-                                                └─────────────────┘
-```
-
-### Debug Workflow
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│ /inspect-scene  │ ──► │ /test-in-blender│ ──► │/add-performance │
-│ Check context   │     │ Test operator   │     │ -metrics        │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-```
-
-### Release Workflow
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│ /bump-version   │ ──► │/update-changelog│ ──► │    /build       │
-│ Set version     │     │ Document changes│     │ Create package  │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-                                                        │
-        ┌───────────────────────────────────────────────┘
-        ▼
-┌─────────────────┐     ┌─────────────────┐
-│   git commit    │ ──► │    git tag      │
-│ + git push      │     │  v1.0.0         │
-└─────────────────┘     └─────────────────┘
-
-Or use /release for the complete automated workflow!
-```
-
----
-
-## Subagents Reference
-
-Subagents are specialized reviewers that Claude can invoke automatically:
-
-| Agent | Specialty | Triggered By |
-|-------|-----------|--------------|
-| `blender-api-expert` | API usage, patterns | Code review requests |
-| `ui-designer` | Panel layouts, UX | UI-related changes |
-| `addon-tester` | Test case creation | Testing requests |
-| `performance-auditor` | Optimization | Performance concerns |
-| `code-reviewer` | General quality | Code review |
-| `version-compatibility-expert` | Multi-version | Compatibility checks |
-| `blender-live-tester` | MCP live testing | Live test commands |
-| `release-manager` | Versioning, changelog, packaging | Release commands |
-
----
-
-## Skills Reference
-
-Skills provide expert knowledge Claude uses automatically:
-
-| Skill | Use Case |
-|-------|----------|
-| `blender-api-patterns` | Operators, properties, context |
-| `blender-performance` | Optimization, batch ops |
-| `blender-ui-patterns` | Panels, layouts, widgets |
-| `addon-architecture` | Multi-file structure, registration |
-| `blender-version-compatibility` | Version detection, compat wrappers |
-| `blender-mcp-workflows` | Live testing patterns |
-| `blender-documentation` | API reference navigation |
-| `performance-optimization` | Profiling, timing |
-| `threading-async` | Background tasks, timers |
-
----
-
-## File Structure Reference
+Without Claude Code, the same steps by hand:
 
 ```
-your-addon-project/
-├── .claude/
-│   ├── CLAUDE.md              # Development standards (READ THIS)
-│   ├── commands/              # 20 slash commands
-│   ├── skills/                # 9 expert knowledge bases
-│   ├── agents/                # 8 specialized reviewers
-│   ├── hooks/                 # Pre-commit, post-edit, pre-package
-│   └── plugins/               # Bundled workflow configuration
-│
-├── .github/
-│   ├── ISSUE_TEMPLATE/        # Bug report, feature request, compat issue
-│   └── PULL_REQUEST_TEMPLATE.md
-│
-├── addon_name/                # YOUR ADDON CODE
-│   ├── __init__.py            # bl_info + registration
-│   ├── operators.py           # Operator classes
-│   ├── panels.py              # UI panels
-│   ├── properties.py          # Property definitions
-│   ├── utils.py               # Helper functions
-│   └── compat.py              # Version compatibility
-│
-├── build/                     # Build output (generated)
-│   └── addon_name-vX.Y.Z.zip  # Distribution package
-│
-├── tests/                     # Test scripts
-│   ├── conftest.py            # Pytest fixtures
-│   ├── test_operators.py      # Operator tests
-│   ├── test_properties.py     # Property tests
-│   ├── test_utils.py          # Utility tests
-│   └── run_blender_tests.py   # Blender test runner
-│
-├── docs/                      # Documentation
-├── build.py                   # Build automation script
-├── CHANGELOG.md               # Version history
-├── CONTRIBUTING.md            # Contribution guidelines
-└── README.md                  # User-facing docs
+blender --background --factory-startup --python tests/test_blender_smoke.py
+python build.py package --clean
+python build.py package --extension --clean --blender "<path to blender>"
 ```
 
----
+## Legacy zip or extension
 
-## Common Patterns Quick Reference
+Both are supported from the same code. bl_info and `blender_manifest.toml` carry the same name, version and minimum Blender, and the tests fail if they drift apart.
 
-### Operator ID Format
-```
-Class:  CATEGORY_OT_operator_name
-ID:     category.operator_name
+| | Legacy zip | Extension |
+|---|---|---|
+| Command | `python build.py package` | `python build.py package --extension` |
+| Installed from | Preferences > Add-ons > Install from Disk | Preferences > Get Extensions, or extensions.blender.org |
+| Links footer | allowed | remove it first (platform rules 6.1 and 3.9) |
 
-Example:
-Class:  MESH_OT_custom_subdivide
-ID:     mesh.custom_subdivide
-```
+The links footer is an optional row of icon buttons (your website, your bug report page) at the bottom of the panel and the preferences. Set `WEBSITE_URL` and `BUG_REPORT_URL` in `panels.py` to show it. It draws nothing while both are empty.
 
-### Panel ID Format
-```
-Class:  CATEGORY_PT_panel_name
+## Commands
 
-Example:
-Class:  VIEW3D_PT_my_tools
-```
+| Command | What it does |
+|---|---|
+| `/setup-addon` | Rename the template's placeholders to your add-on's names |
+| `/setup-blender-dev` | Check this machine has everything the workflow needs |
+| `/new-operator` | Add an operator using the template's patterns |
+| `/new-panel` | Add a panel or sub-panel |
+| `/test-addon` | Run the headless tests on both Blenders |
+| `/check-addon` | Run the after-change checklist from CLAUDE.md and report pass or fail per step |
+| `/build` | Build the zip with build.py and check what is in it |
+| `/bump-version` | Set a new version in bl_info and the manifest together, then rebuild |
+| `/test-in-blender` | Test the operators in your running Blender (needs the MCP) |
+| `/live-dev` | Edit, reload live in the running Blender, check, repeat (needs the MCP) |
+| `/inspect-scene` | Read the running Blender's scene state, for debugging (needs the MCP) |
+| `/create-test-scene` | Build a scratch test scene in the running Blender (needs the MCP) |
+| `/docs-lookup` | Look up the Blender Python API or manual |
+| `/api-example` | Find a working code example and prove it runs |
+| `/compare-api-versions` | Check an API behaves the same on your oldest and newest Blender |
+| `/add-performance-metrics` | Time an operator or handler to find where it is slow, then remove the timing code |
 
-### Version Detection
-```python
-import bpy
+## Skills
 
-if bpy.app.version >= (4, 0, 0):
-    # Blender 4.0+ code
-elif bpy.app.version >= (3, 0, 0):
-    # Blender 3.x code
-```
+Claude loads these on its own when a task calls for them.
 
-### Operator Return Values
-```python
-return {'FINISHED'}      # Success
-return {'CANCELLED'}     # Failed/aborted
-return {'RUNNING_MODAL'} # Modal operator running
-return {'PASS_THROUGH'}  # Let other handlers process
-```
+| Skill | Covers |
+|---|---|
+| `addon-architecture` | Package layout, registration, preferences, storing references |
+| `addon-writing` | README, tooltips, labels, report messages, comments |
+| `blender-api-patterns` | Core bpy patterns and the API traps |
+| `blender-ui-patterns` | Panels, fold boxes, dialogs, the links footer |
+| `blender-version-targeting` | Setting a minimum Blender, legacy versus extension |
+| `blender-documentation` | Where to look things up |
+| `blender-mcp-workflows` | Using the Blender MCP for live checks |
+| `blender-performance` | Blender-specific speed patterns |
+| `performance-optimization` | Measuring before optimizing |
+| `threading-async` | Timers, background work, not freezing Blender |
 
----
+## Agents
 
-## First Addon Tutorial
+Claude hands work to these when it fits, or you can ask for one by name.
 
-### Step 1: Setup Project
-```
-1. Copy blender-addon-template/ to Desktop/my_first_addon/
-2. Rename addon_name/ to my_tools/
-3. Open folder in Claude Code
-```
+| Agent | Does |
+|---|---|
+| `code-reviewer` | Reviews changed code against CLAUDE.md |
+| `blender-api-expert` | Checks bpy usage against the Blender 5.x API |
+| `ui-designer` | Reviews the panel and preferences layout, and the README walkthrough |
+| `addon-tester` | Runs and writes headless tests |
+| `blender-live-tester` | Tests in the running Blender through the MCP |
+| `performance-auditor` | Finds slow code and ranks fixes by impact |
 
-### Step 2: Update bl_info
-Edit `my_tools/__init__.py`:
-```python
-bl_info = {
-    "name": "My Tools",
-    "author": "Your Name",
-    "version": (1, 0, 0),
-    "blender": (3, 6, 0),
-    "location": "View3D > Sidebar > My Tools",
-    "description": "My first Blender addon",
-    "category": "Object",
-}
-```
+## Hooks
 
-### Step 3: Create Your First Operator
-Run in Claude Code:
-```
-/new-operator
-```
-Answer the prompts:
-- Name: `random_color`
-- Category: `OBJECT`
-- Description: `Assign random color to selected objects`
-- Undo: yes
-- Properties dialog: no
-- UI placement: panel
+Set in `.claude/settings.json`.
 
-### Step 4: Test the Addon
+- `check_edit.py` is **on**. After every edit it flags house-style breaks (for example an em dash in user-facing text) so Claude fixes them straight away. To turn it off, remove its `PostToolUse` entry.
+- `guard_commit.py` is **off**. It blocks a git commit whose message credits an AI tool, such as a co-author trailer. To switch it on, add this `PreToolUse` entry next to `PostToolUse` in `.claude/settings.json`:
 
-**Option A: Manual Install**
-1. ZIP the `my_tools/` folder
-2. Blender → Edit → Preferences → Add-ons → Install
-3. Enable "My Tools"
-4. Press N in 3D View → My Tools tab
-
-**Option B: Live Test (requires MCP)**
-```
-/test-in-blender
+```json
+"PreToolUse": [
+  {
+    "matcher": "Bash|PowerShell",
+    "hooks": [
+      {
+        "type": "command",
+        "command": "H=\"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard_commit.py\"; [ -f \"$H\" ] || exit 0; if [ \"$OS\" = \"Windows_NT\" ]; then P=python; else P=python3; fi; \"$P\" \"$H\""
+      }
+    ]
+  }
+],
 ```
 
-### Step 5: Package for Release
-```
-/package-addon
-```
+## House style
 
----
+The writing rules in `docs/README Spec.md` and the code rules in `CLAUDE.md` are this template's defaults: plain second-person text, one-line tooltips that say what a click does, no em dashes, comments that say why. Change them if you like. Claude follows whatever those files say.
 
-## Testing Your Addon
-
-### Quick Testing Methods
-
-| Method | Command | When to Use |
-|--------|---------|-------------|
-| Live test | `/test-in-blender` | Real-time testing via MCP |
-| Reload test | `/test-addon` | After code changes |
-| Manual test | Install ZIP in Blender | Final verification |
-
-### Running Automated Tests
-
-```bash
-# Unit tests (no Blender required)
-python -m pytest tests/test_utils.py -v
-
-# All tests inside Blender
-blender --background --python tests/run_blender_tests.py
-
-# Specific test file in Blender
-blender --background --python tests/run_blender_tests.py -- --test-file test_operators.py
-```
-
-### Test Files
-
-| File | Purpose |
-|------|---------|
-| `tests/conftest.py` | Pytest fixtures and configuration |
-| `tests/test_operators.py` | Operator registration and behavior tests |
-| `tests/test_properties.py` | Property validation tests |
-| `tests/test_utils.py` | Utility function tests (no Blender needed) |
-| `tests/run_blender_tests.py` | Script to run pytest inside Blender |
-
-See `tests/README.md` for detailed testing documentation.
-
----
-
-## Troubleshooting
-
-### Addon doesn't appear after install
-- Check Blender console (Window → Toggle System Console) for errors
-- Verify bl_info is properly formatted
-- Ensure __init__.py has register/unregister functions
-
-### Operator grayed out
-- Check poll() method - does context meet requirements?
-- Verify you have correct object selected/mode active
-
-### Changes not reflecting
-- Blender caches addons - use `/test-addon` to force reload
-- Or restart Blender completely
-
-### MCP commands not working
-- Verify Blender MCP server is running
-- Check .mcp.json configuration
-- Ensure Blender is open with MCP addon enabled
-
-### Version compatibility errors
-- Run `/check-compatibility` to identify issues
-- Use `/compare-api-versions` to understand changes
-- Add version guards with `bpy.app.version`
-
----
-
-## Tips & Best Practices
-
-1. **Read CLAUDE.md first** - Contains all conventions and patterns
-2. **Use live testing** - MCP makes iteration much faster
-3. **Check compatibility early** - Run `/check-compatibility` before release
-4. **Let agents review** - They catch common API mistakes
-5. **Use skills for reference** - Ask Claude about patterns when unsure
-6. **Keep operators focused** - One operator = one action
-7. **Always implement poll()** - Prevents crashes from invalid context
-8. **Free your BMesh** - Memory leaks are common pitfall
-9. **Test on min/max versions** - If supporting multiple Blender versions
-
----
-
-## Quick Command Reference Card
+## Layout
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                    DEVELOPMENT                                  │
-│  /new-operator        Create new operator                      │
-│  /new-panel           Create new UI panel                      │
-│  /setup-blender-dev   Initialize project                       │
-├────────────────────────────────────────────────────────────────┤
-│                      TESTING                                    │
-│  /test-addon          Reload and validate                      │
-│  /test-in-blender     Live test (MCP)                          │
-│  /inspect-scene       Query scene (MCP)                        │
-│  /create-test-scene   Setup test env (MCP)                     │
-│  /live-dev            Interactive mode (MCP)                   │
-├────────────────────────────────────────────────────────────────┤
-│                   COMPATIBILITY                                 │
-│  /check-compatibility     Scan for issues                      │
-│  /upgrade-addon           Migrate to new version               │
-│  /add-version-support     Multi-version support                │
-│  /compare-api-versions    API diff between versions            │
-├────────────────────────────────────────────────────────────────┤
-│                   DOCUMENTATION                                 │
-│  /docs-lookup         Search Blender docs                      │
-│  /api-example         Find code examples                       │
-├────────────────────────────────────────────────────────────────┤
-│                 RELEASE & BUILD                                 │
-│  /build               Package addon (build.py)                 │
-│  /bump-version        Update version + changelog               │
-│  /update-changelog    Document changes                         │
-│  /release             Full release workflow                    │
-│  /package-addon       Quick distribution ZIP                   │
-│  /add-performance-metrics  Add profiling                       │
-└────────────────────────────────────────────────────────────────┘
+addon_name/           the add-on (bl_info, manifest, operators, properties, panels, preferences)
+build.py              builds the legacy and extension zips
+tests/                headless smoke test
+docs/README Spec.md   how the README and tooltips are written
+CLAUDE.md             the guide Claude reads first
+.claude/              commands, skills, agents, hooks
+.mcp.json             Blender MCP server
 ```
-
----
-
-## Resources
-
-- [Blender Python API](https://docs.blender.org/api/current/)
-- [Blender Manual](https://docs.blender.org/manual/en/latest/)
-- [Blender MCP Server](https://github.com/ahujasid/blender-mcp)
-- [Claude Code Documentation](https://docs.anthropic.com/claude-code)
-
----
-
-*Template Version: 1.0 | Last Updated: 2025*

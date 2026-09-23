@@ -1,32 +1,28 @@
-# Blender 4.2+ extension manifest.
-# Keep in sync with bl_info in __init__.py.
-# Docs: https://docs.blender.org/manual/en/latest/advanced/extensions/
+# Extension manifest, used by `python build.py package --extension`.
+# Keep name, version and blender_version_min in step with bl_info in __init__.py.
+# Reference: https://docs.blender.org/manual/en/latest/advanced/extensions/getting_started.html
 
 schema_version = "1.0.0"
 
 id = "addon_name"
-version = "1.0.0"
+version = "0.1.0"
 name = "Addon Name"
-tagline = "Brief description of what this addon does"
-maintainer = "Your Name <your@email.example>"
+# Up to 64 characters, no full stop at the end.
+tagline = "PLACEHOLDER one line saying what the add-on does"
+maintainer = "Your Name"
 type = "add-on"
 
-blender_version_min = "4.2.0"
-# blender_version_max = "5.0.0"  # uncomment to cap
+blender_version_min = "5.0.0"
 
 license = [
-    "SPDX:GPL-3.0-or-later",
+  "SPDX:GPL-3.0-or-later",
 ]
 
-# website = "https://example.com/addon"
-# tags = ["Object", "Mesh"]
+# website = "https://example.com"
+# tags = ["3D View"]
 
-# Permissions (required for 4.2+):
+# Declare permissions only if the add-on needs them, e.g. reading or writing files
+# outside the .blend, or network access:
 # [permissions]
-# files = "Read/write project files"
-# network = "Fetch remote resources"
-
-# Wheels (bundled Python packages):
-# wheels = [
-#   "./wheels/somepkg-1.0-py3-none-any.whl",
-# ]
+# files = "Import and export files"
+# network = "Download assets"

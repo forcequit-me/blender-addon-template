@@ -1,334 +1,126 @@
 ---
 name: blender-performance
-description: Blender-specific performance patterns — minimizing viewport updates, batching property changes, using BMesh over operators, depsgraph efficiency. Use when an operator feels slow, processing large datasets, or addressing viewport lag.
+description: Blender-specific speed patterns for 5.0+ - direct data access over bpy.ops, batch_remove, numpy foreach_get/foreach_set on attributes, evaluated meshes, BMesh, cheap draw() code with cached and throttled scans, handler cost, and splitting long work across timers. Use when an operator is slow on a big file, the viewport lags while the add-on is enabled, or a panel or handler walks bpy.data.
 ---
 
-# Blender Performance Optimization
+# Blender performance
 
-Expert knowledge for optimizing Blender addon performance.
+Measure first (`performance-optimization`). Then these, roughly in order of payoff.
 
-## When to Use This Skill
-- Operator feels slow or unresponsive
-- Processing large datasets
-- Viewport updates are laggy
-- Optimizing batch operations
-- Reducing memory usage
+## 1. Direct data access, not operators
 
-## Viewport Update Best Practices
+`bpy.ops` calls check context, redraw and push undo on every call. In a loop that is the whole cost.
 
-### Minimize Update Calls
 ```python
-# BAD - updates after each change
+# slow: one operator call per object
 for obj in objects:
-    obj.location.z += 1.0
-    bpy.context.view_layer.update()  # Expensive!
-
-# GOOD - batch changes, single update
-for obj in objects:
-    obj.location.z += 1.0
-# Viewport updates automatically at end of operator
-```
-
-### Defer Updates
-```python
-# For many property changes
-with bpy.context.view_layer.depsgraph.updates_paused():
-    for obj in objects:
-        obj.modifiers.new("Subsurf", 'SUBSURF')
-# Updates resume automatically
-```
-
-### Force Redraw Only When Needed
-```python
-# Only tag redraw for specific areas
-for area in bpy.context.screen.areas:
-    if area.type == 'VIEW_3D':
-        area.tag_redraw()
-        break  # Don't redraw all viewports
-```
-
-## Batch Operations vs Individual Updates
-
-### Object Operations
-```python
-import time
-
-# SLOW: Using operators in loop
-start = time.perf_counter()
-for i in range(100):
-    bpy.ops.mesh.primitive_cube_add(location=(i, 0, 0))
-slow_time = time.perf_counter() - start
-
-# FAST: Direct data creation
-start = time.perf_counter()
-mesh = bpy.data.meshes.new("SharedMesh")
-bpy.ops.mesh.primitive_cube_add()
-template = bpy.context.active_object.data
-
-for i in range(100):
-    obj = bpy.data.objects.new(f"Cube_{i}", template.copy())
-    obj.location.x = i
-    bpy.context.collection.objects.link(obj)
-fast_time = time.perf_counter() - start
-
-# Speedup: typically 5-20x
-```
-
-### Modifier Operations
-```python
-# SLOW: Operator per modifier
-for obj in objects:
-    bpy.context.view_layer.objects.active = obj
+    context.view_layer.objects.active = obj
     bpy.ops.object.modifier_add(type='SUBSURF')
 
-# FAST: Direct modifier creation
+# fast
 for obj in objects:
-    mod = obj.modifiers.new("Subsurf", 'SUBSURF')
-    mod.levels = 2
+    obj.modifiers.new("Subdivision", 'SUBSURF').levels = 2
 ```
 
-### Selection Operations
-```python
-# SLOW: Operator selection
-for obj in objects:
-    obj.select_set(False)
-bpy.ops.object.select_all(action='DESELECT')
+When you must use an operator (Blender's parenting, joining), call it once on a prepared selection, not once per object.
 
-# FAST: Direct selection
-for obj in bpy.context.selected_objects:
-    obj.select_set(False)
-```
+## 2. Bulk removal
 
-## Context Overrides for Efficiency
+`bpy.data.batch_remove(ids)` removes many IDs in one pass. `bpy.data.objects.remove()` in a loop rebuilds relations each time.
 
-### Avoid Mode Switching
-```python
-# SLOW: Switch modes repeatedly
-for obj in mesh_objects:
-    bpy.context.view_layer.objects.active = obj
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.subdivide()
-    bpy.ops.object.mode_set(mode='OBJECT')
+## 3. Sets, not lists, for membership
 
-# FAST: Use BMesh (no mode switch needed)
-import bmesh
-for obj in mesh_objects:
-    bm = bmesh.new()
-    bm.from_mesh(obj.data)
-    bmesh.ops.subdivide_edges(bm, edges=bm.edges, cuts=1)
-    bm.to_mesh(obj.data)
-    bm.free()
-```
+IDs are hashable. `obj not in excluded` on a list is linear per check; build `excluded = set(...)` once.
 
-### Batch Context Override
-```python
-# Process multiple objects with single context setup
-override = bpy.context.copy()
-for obj in objects:
-    override['active_object'] = obj
-    override['selected_objects'] = [obj]
-    with bpy.context.temp_override(**override):
-        bpy.ops.object.transform_apply(scale=True)
-```
+## 4. numpy with foreach_get / foreach_set
 
-## Depsgraph Usage Patterns
-
-### Evaluated Data Access
-```python
-# Get evaluated (with modifiers applied) mesh
-depsgraph = bpy.context.evaluated_depsgraph_get()
-obj_eval = obj.evaluated_get(depsgraph)
-mesh_eval = obj_eval.to_mesh()
-
-# Process evaluated mesh
-vertices = [v.co.copy() for v in mesh_eval.vertices]
-
-# Clean up
-obj_eval.to_mesh_clear()
-```
-
-### Dependency Updates
-```python
-# Update specific object
-obj.update_tag()
-
-# Update entire depsgraph
-bpy.context.view_layer.update()
-
-# Check if update needed
-depsgraph = bpy.context.evaluated_depsgraph_get()
-if depsgraph.id_type_updated('OBJECT'):
-    # Objects changed
-    pass
-```
-
-## Memory Management for Large Datasets
-
-### Chunked Processing
-```python
-def process_in_chunks(items, chunk_size=1000):
-    """Process large lists in chunks to manage memory"""
-    for i in range(0, len(items), chunk_size):
-        chunk = items[i:i + chunk_size]
-        yield chunk
-
-# Usage
-for chunk in process_in_chunks(large_object_list, 500):
-    for obj in chunk:
-        process_object(obj)
-    # Memory can be freed between chunks
-```
-
-### Generator Pattern
-```python
-# BAD: Load all into memory
-def get_all_vertices(objects):
-    vertices = []
-    for obj in objects:
-        for v in obj.data.vertices:
-            vertices.append(v.co.copy())
-    return vertices  # Huge memory usage!
-
-# GOOD: Generator yields one at a time
-def iter_vertices(objects):
-    for obj in objects:
-        for v in obj.data.vertices:
-            yield obj, v.co.copy()
-
-# Process without loading all
-for obj, co in iter_vertices(objects):
-    process_vertex(obj, co)
-```
-
-### Clear Unused Data
-```python
-# Remove orphaned data blocks
-bpy.ops.outliner.orphans_purge(do_recursive=True)
-
-# Or manually
-for mesh in bpy.data.meshes:
-    if mesh.users == 0:
-        bpy.data.meshes.remove(mesh)
-```
-
-## BMesh vs Mesh Data
-
-### When to Use BMesh
-```python
-import bmesh
-
-# Complex mesh editing operations
-# - Subdivide, extrude, bevel
-# - Topology changes
-# - Selections
-
-bm = bmesh.new()
-bm.from_mesh(mesh)
-
-# Operations
-bmesh.ops.subdivide_edges(bm, edges=bm.edges, cuts=2)
-bmesh.ops.extrude_face_region(bm, geom=bm.faces)
-
-bm.to_mesh(mesh)
-bm.free()
-```
-
-### When to Use Direct Mesh Access
-```python
-# Fast vertex position access/modification
-# - Transform vertices
-# - Read positions
-# - No topology changes
-
-mesh = obj.data
-
-# Read positions (fast)
-positions = [v.co.copy() for v in mesh.vertices]
-
-# Write positions (fast)
-for v in mesh.vertices:
-    v.co.z += 1.0
-
-mesh.update()
-```
-
-### Numpy for Large Meshes
 ```python
 import numpy as np
 
 mesh = obj.data
-
-# Fast read with numpy
-vertex_count = len(mesh.vertices)
-positions = np.empty(vertex_count * 3, dtype=np.float32)
-mesh.vertices.foreach_get('co', positions)
-positions = positions.reshape(-1, 3)
-
-# Fast write with numpy
-positions[:, 2] += 1.0  # Raise all Z
-mesh.vertices.foreach_set('co', positions.ravel())
+pos = mesh.attributes["position"]
+co = np.empty(len(mesh.vertices) * 3, dtype=np.float32)
+pos.data.foreach_get("vector", co)             # checked on 5.0 and 5.2
+co = co.reshape(-1, 3)
+co[:, 2] += 1.0
+pos.data.foreach_set("vector", co.ravel())
 mesh.update()
 ```
 
-## Performance Profiling
+`mesh.vertices.foreach_get("co", ...)` still works too. Generic attributes read with `"value"`, `"vector"` or `"color"` depending on type. It works on ID collections as well: `bpy.data.objects.foreach_get("location", buf)` fills a flat array of every object's location (checked).
 
-### Basic Timing
+## 5. Evaluated data
+
 ```python
-import time
-
-start = time.perf_counter()
-# Operation
-elapsed = time.perf_counter() - start
-print(f"Operation took: {elapsed:.4f}s")
+depsgraph = context.evaluated_depsgraph_get()
+obj_eval = obj.evaluated_get(depsgraph)
+mesh_eval = obj_eval.to_mesh()
+try:
+    count = len(mesh_eval.polygons)
+finally:
+    obj_eval.to_mesh_clear()
 ```
 
-### Section Profiling
+Get the depsgraph once per operator, not per object.
+
+## 6. Mesh editing without mode switches
+
+Topology changes: BMesh on the mesh data, no Edit Mode round trips.
+
 ```python
-class OperatorProfiler:
-    def __init__(self):
-        self.timings = {}
+import bmesh
 
-    def start(self, section):
-        self.timings[section] = {'start': time.perf_counter()}
-
-    def end(self, section):
-        self.timings[section]['elapsed'] = (
-            time.perf_counter() - self.timings[section]['start']
-        )
-
-    def report(self):
-        total = sum(t.get('elapsed', 0) for t in self.timings.values())
-        print(f"Total: {total:.4f}s")
-        for section, data in self.timings.items():
-            elapsed = data.get('elapsed', 0)
-            pct = (elapsed / total * 100) if total > 0 else 0
-            print(f"  {section}: {elapsed:.4f}s ({pct:.1f}%)")
+bm = bmesh.new()
+try:
+    bm.from_mesh(mesh)
+    bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=1)
+    bm.to_mesh(mesh)
+finally:
+    bm.free()
+mesh.update()
 ```
 
-## Optimization Checklist
+Positions only: numpy (above). Leave BMesh for topology.
 
-### Before Optimizing
-- [ ] Profile to find actual bottleneck
-- [ ] Measure baseline performance
-- [ ] Identify if CPU, memory, or I/O bound
+## 7. No forced updates in loops
 
-### Common Optimizations
-- [ ] Replace `bpy.ops` with direct data access
-- [ ] Batch operations instead of loops
-- [ ] Use BMesh for complex mesh operations
-- [ ] Use numpy for large vertex arrays
-- [ ] Minimize viewport updates
-- [ ] Process in chunks for large datasets
-- [ ] Use generators for memory efficiency
+Do not call `context.view_layer.update()` inside a loop. Blender evaluates once when the operator returns. Call it once, only if you need evaluated results mid-operator.
 
-### Performance Targets
-| Operation Type | Target |
-|---------------|--------|
-| Interactive (button click) | < 100ms |
-| Modal (per frame) | < 16ms |
-| Batch operation | < 1s or show progress |
+## 8. draw() runs constantly
 
-## Resources
-- Performance tips: https://docs.blender.org/api/current/info_tips_and_tricks.html
-- BMesh module: https://docs.blender.org/api/current/bmesh.html
+Panels and header buttons redraw on mouse moves, during playback and during modal transforms. A `draw()` that walks `bpy.data` costs frame time for every user all the time.
+
+The pattern for a button that shows live state (for example a header icon that lights up while the file has unused data):
+
+- Handlers (`depsgraph_update_post`, `undo_post`, `redo_post`, `load_post`) only set a dirty flag and tag a redraw.
+- `draw()` rescans only when dirty, stops at the first hit (`any(...)`, not a full count), and at most every 0.25 s.
+- A skipped scan books a one-shot timer so the button still repaints once the window has passed.
+- A user action that changes the answer drops the throttle so the UI feels instant.
+
+Tag only the areas that need it:
+
+```python
+for window in context.window_manager.windows:
+    for area in window.screen.areas:
+        if area.type == 'VIEW_3D':
+            area.tag_redraw()
+```
+
+## 9. Handlers
+
+`depsgraph_update_post` fires on every change, including each step of a drag. Keep it to a flag or a set lookup. Check `depsgraph.id_type_updated('OBJECT')` or iterate `depsgraph.updates` to skip irrelevant updates. Never do file I/O in it.
+
+## 10. Long work without freezing
+
+- A batch over many items: process a slice per `bpy.app.timers` tick and return the next interval, or a modal operator with `event_timer_add`. Show progress with `layout.progress()` or `window_manager.progress_begin/update/end`. Details in `threading-async`.
+- Anything slower than about a second needs visible progress and a way to stop.
+
+## Targets
+
+| Action | Budget |
+| --- | --- |
+| Button click | under 100 ms |
+| draw(), handler during a drag | well under 1 ms |
+| Batch job | progress shown after 1 s |
+
+Reference: https://docs.blender.org/api/current/info_best_practice.html and https://docs.blender.org/api/current/info_tips_and_tricks.html

@@ -1,157 +1,28 @@
 ---
-description: Search Blender documentation
-argument-hint: "<query>"
-allowed-tools: WebFetch, WebSearch
+description: Look up the Blender Python API or manual for the versions the add-on supports
+argument-hint: "<query, e.g. bpy.types.Panel or 'depsgraph handler'>"
+allowed-tools: WebFetch, WebSearch, mcp__blender__bpy_api_lookup
 ---
 
-Search official Blender documentation for API reference and usage information.
+Answer `$ARGUMENTS` from the official docs for the minimum Blender the add-on supports (bl_info `"blender"`, 5.0 by default).
 
-**Ask user:**
-What do you want to look up? Examples:
-- "bpy.ops.mesh.subdivide"
-- "PropertyGroup"
-- "how to create a modifier"
-- "bmesh edge loop"
+## Sources, in order
 
-**Documentation Sources:**
+1. `mcp__blender__bpy_api_lookup` when the Blender MCP is connected. It reflects the running version.
+2. Versioned API docs. Use the minimum version, not `current`, so the answer holds for it:
+   - Class: `https://docs.blender.org/api/5.0/bpy.types.<Class>.html`
+   - Operators: `https://docs.blender.org/api/5.0/bpy.ops.<category>.html`
+   - Properties: `https://docs.blender.org/api/5.0/bpy.props.html`
+   - Modules: `bmesh.html`, `mathutils.html`, `bpy.app.handlers.html`, `bpy.app.timers.html`, `bpy.utils.html`
+   - Gotchas worth reading: `info_gotcha.html`, `info_best_practice.html`
+3. Manual, for user-facing behaviour: `https://docs.blender.org/manual/en/5.0/`. Extensions and the manifest: `https://docs.blender.org/manual/en/latest/advanced/extensions/index.html`.
+4. WebSearch only when the docs do not answer it, for example known bugs or behaviour changes.
 
-1. **Python API Reference** (primary for addon development)
-   - URL: https://docs.blender.org/api/current/
-   - Version-specific: https://docs.blender.org/api/{version}/
-   - Examples: /api/4.1/, /api/4.0/, /api/3.6/
+If the answer might differ in the newest release you test on, fetch that version's page too and say whether it changed (or use `/compare-api-versions`).
 
-2. **Blender Manual** (user-facing features)
-   - URL: https://docs.blender.org/manual/en/latest/
-   - Good for understanding features from user perspective
+## Output
 
-3. **Documentation Hub**
-   - URL: https://docs.blender.org/
-   - Links to all documentation
-
-**Process:**
-
-1. **Identify search type:**
-   - API class/function → Python API docs
-   - Operator → bpy.ops reference
-   - Concept/workflow → Blender Manual
-   - Code example → API docs examples section
-
-2. **Search API documentation:**
-
-   **For bpy.types classes:**
-   ```
-   https://docs.blender.org/api/current/bpy.types.{ClassName}.html
-
-   Examples:
-   - bpy.types.Operator
-   - bpy.types.Panel
-   - bpy.types.Mesh
-   - bpy.types.Object
-   - bpy.types.PropertyGroup
-   ```
-
-   **For bpy.ops operators:**
-   ```
-   https://docs.blender.org/api/current/bpy.ops.{category}.html
-
-   Examples:
-   - bpy.ops.mesh.html (mesh operators)
-   - bpy.ops.object.html (object operators)
-   - bpy.ops.transform.html (transform operators)
-   ```
-
-   **For bpy.props properties:**
-   ```
-   https://docs.blender.org/api/current/bpy.props.html
-
-   Includes:
-   - IntProperty
-   - FloatProperty
-   - BoolProperty
-   - StringProperty
-   - EnumProperty
-   - PointerProperty
-   - CollectionProperty
-   ```
-
-   **For modules:**
-   ```
-   https://docs.blender.org/api/current/{module}.html
-
-   Examples:
-   - bmesh.html
-   - mathutils.html
-   - bpy.utils.html
-   - bpy.path.html
-   ```
-
-3. **Quick reference links:**
-
-   | Topic | URL |
-   |-------|-----|
-   | API Index | /api/current/genindex.html |
-   | bpy.types | /api/current/bpy.types.html |
-   | bpy.ops | /api/current/bpy.ops.html |
-   | bpy.props | /api/current/bpy.props.html |
-   | bpy.data | /api/current/bpy.data.html |
-   | bpy.context | /api/current/bpy.context.html |
-   | bmesh | /api/current/bmesh.html |
-   | mathutils | /api/current/mathutils.html |
-   | Operator tutorial | /api/current/info_tutorial_addon.html |
-   | Tips & Tricks | /api/current/info_tips_and_tricks.html |
-   | Best Practices | /api/current/info_best_practice.html |
-
-4. **Fetch and summarize:**
-   - Retrieve relevant documentation page
-   - Extract key information:
-     - Class/function signature
-     - Parameters and return values
-     - Description
-     - Code examples
-   - Provide direct link for full documentation
-
-**Example output:**
-
-```
-═══════════════════════════════════════
-DOCUMENTATION: bpy.types.Operator
-═══════════════════════════════════════
-
-Base class for operators.
-
-Key Attributes:
-  bl_idname (str) - Unique operator identifier
-  bl_label (str) - Display name
-  bl_description (str) - Tooltip text
-  bl_options (set) - {'REGISTER', 'UNDO', etc.}
-
-Key Methods:
-  poll(context) - Return True if operator can run
-  invoke(context, event) - Called on operator invoke
-  execute(context) - Main operator logic
-  modal(context, event) - For modal operators
-  draw(context) - Draw operator properties
-
-Return Values:
-  {'FINISHED'} - Success
-  {'CANCELLED'} - Failed/cancelled
-  {'RUNNING_MODAL'} - Modal mode
-  {'PASS_THROUGH'} - Pass to other handlers
-
-Example:
-  class MyOperator(bpy.types.Operator):
-      bl_idname = "object.my_operator"
-      bl_label = "My Operator"
-
-      def execute(self, context):
-          return {'FINISHED'}
-
-Full docs: https://docs.blender.org/api/current/bpy.types.Operator.html
-═══════════════════════════════════════
-```
-
-**Output:**
-- Relevant documentation summary
-- Code examples from official docs
-- Direct links to full documentation
-- Related topics/classes
+- The signature or property with its type and default.
+- One short example in house style.
+- Any gotcha (context requirements, undo, threading, when it is read-only).
+- The doc link.

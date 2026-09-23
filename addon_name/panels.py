@@ -1,64 +1,63 @@
-"""UI Panel classes for the addon."""
-
-import bpy
 from bpy.types import Panel
 
 
-class VIEW3D_PT_addon_panel(Panel):
-    """Main addon panel in the 3D View sidebar."""
+# Links footer for legacy (Install from Disk) builds. The row draws nothing while both are empty.
+# Before publishing on extensions.blender.org, delete the footer: ADDON_NAME_PT_links, draw_links
+# and the call in preferences.py. The platform rules forbid store and donation links in the UI
+# (rule 6.1) and forbid touching the OS or other add-ons (rule 3.9).
+WEBSITE_URL = ""
+BUG_REPORT_URL = ""
+
+
+def draw_links(layout):
+    if not (WEBSITE_URL or BUG_REPORT_URL):
+        return
+    row = layout.row()
+    row.alignment = 'CENTER'
+    if WEBSITE_URL:
+        row.operator("wm.url_open", text="", icon='URL').url = WEBSITE_URL
+    if BUG_REPORT_URL:
+        row.operator("wm.url_open", text="", icon='HELP').url = BUG_REPORT_URL
+
+
+class ADDON_NAME_PT_panel(Panel):
+    """PLACEHOLDER: one line saying what this panel does"""
+
     bl_label = "Addon Name"
-    bl_idname = "VIEW3D_PT_addon_panel"
+    bl_idname = "ADDON_NAME_PT_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Addon Tab"
+    bl_category = "Addon Name"
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        props = scene.addon_props
+        props = context.scene.addon_name
 
-        # Properties section
+        layout.operator("addon_name.example")
+
+        # Settings fold away so the panel stays short until you need them.
         box = layout.box()
-        box.label(text="Settings", icon='PREFERENCES')
-
-        col = box.column(align=True)
-        col.prop(props, "example_float")
-        col.prop(props, "example_enum")
-        col.prop(props, "example_bool")
-
-        layout.separator()
-
-        # Operators section
-        box = layout.box()
-        box.label(text="Actions", icon='PLAY')
-
-        col = box.column(align=True)
-        col.operator("addon.example_operator", icon='OBJECT_ORIGIN')
-
-        # Object info (when object selected)
-        if context.active_object:
-            layout.separator()
-            box = layout.box()
-            box.label(text="Active Object", icon='OBJECT_DATA')
-
-            obj = context.active_object
-            col = box.column(align=True)
-            col.label(text=f"Name: {obj.name}")
-            col.label(text=f"Type: {obj.type}")
-            col.label(text=f"Location: {obj.location.z:.2f} Z")
+        box.prop(
+            props, "show_settings",
+            icon='DOWNARROW_HLT' if props.show_settings else 'RIGHTARROW',
+            emboss=False,
+        )
+        if props.show_settings:
+            box.prop(props, "target")
 
 
-# Subpanel example
-class VIEW3D_PT_addon_subpanel(Panel):
-    """Subpanel for additional options."""
-    bl_label = "Advanced"
-    bl_idname = "VIEW3D_PT_addon_subpanel"
+class ADDON_NAME_PT_links(Panel):
+    """Links to the author's website and the bug report page"""
+
+    bl_label = ""
+    bl_idname = "ADDON_NAME_PT_links"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Addon Tab"
-    bl_parent_id = "VIEW3D_PT_addon_panel"
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_category = "Addon Name"
+    bl_parent_id = "ADDON_NAME_PT_panel"
+    bl_options = {'HIDE_HEADER'}
+    # Keeps the links under any sub-panels added later.
+    bl_order = 100
 
     def draw(self, context):
-        layout = self.layout
-        layout.label(text="Advanced options go here")
+        draw_links(self.layout)

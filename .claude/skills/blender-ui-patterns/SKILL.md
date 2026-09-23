@@ -1,443 +1,198 @@
 ---
 name: blender-ui-patterns
-description: Blender UI/UX patterns — panel layouts (column/row/split/box), operator dialogs, UILists, custom property editors, icon usage. Use when creating sidebar panels, designing operator interfaces, or following Blender UI conventions.
+description: This template's default UI rules for a Blender add-on and the layout code that implements them - sidebar panel, Settings section, status text, header button, popover, operator dialog, confirmation, preferences screen and the legacy-only links footer. Use when designing or reviewing a panel or preferences screen, or when deciding whether a new control belongs on screen at all.
 ---
 
-# Blender UI/UX Patterns
+# Blender UI patterns
 
-Expert knowledge for creating effective Blender user interfaces.
+These are the template's default rules. They come from add-ons that shipped and got used; change them in this skill if your add-on needs different ones.
 
-## When to Use This Skill
-- Creating panels for the sidebar
-- Designing operator interfaces
-- Building custom property editors
-- Implementing UILists
-- Following Blender UI conventions
+## The rules
 
-## Layout Types
+1. **Every visible control has to earn its place.** Before adding a button, ask whether an existing control can absorb it, whether it can live in Settings, or whether it can be automatic. Most good features add no control at all.
+2. **One visible control per idea.** A toggle whose label changes beats two buttons. A row icon beats a second list of actions.
+3. **Advanced options go in a Settings section, closed by default**, behind a gear (`PREFERENCES` icon). The main panel shows the daily actions only.
+4. **A status line says what state the user is in**, in words, without hovering. "Every preset renders here", "No folder saved, using //renders/", "Pick a preset to render". Never leave the user to read a tooltip to find out what will happen.
+5. **Labels and tooltips say what happens.** "Delete Empties", not "Execute". Tooltip voice is in the `addon-writing` skill.
+6. **Confirm only irreversible actions.** Undoable actions run straight away. Overwriting a file on disk asks first; deleting objects (undoable) does not.
+7. **Every operator that changes Blender data is undoable**: `bl_options = {'REGISTER', 'UNDO'}` or `{'UNDO'}`. Operators that only open a folder, a URL or a dialog skip it.
+8. **Non-destructive, with one-click restore.** An add-on that swaps the user's materials keeps the originals and brings them back with one click. One that overwrites a preset file backs it up first.
+9. **Show counts or a preview before a scary action.** "12 materials into 3" in the confirm dialog; a header icon pressed in only while there is something to act on.
+10. **Report what happened**, with numbers and what was skipped: "Removed 14 empties, kept 4 in use", "Purged 37 unused data blocks". `self.report({'INFO'}, ...)`; `'WARNING'` when something was skipped or nothing happened.
+11. **Empty states say what to do next**: "No presets yet / Set up your render settings, / then Save Current as Preset."
+12. **Sidebar tab (`bl_category`) is the plain add-on name.** Panel `bl_label` too.
+13. **Legacy builds carry the links footer on the panel and on the preferences screen** (below). Extensions builds carry none.
 
-### Column Layout
+## Panel skeleton
+
 ```python
-def draw(self, context):
-    layout = self.layout
-
-    # Basic column
-    col = layout.column()
-    col.prop(obj, "location")
-    col.prop(obj, "rotation_euler")
-
-    # Aligned column (tighter spacing)
-    col = layout.column(align=True)
-    col.prop(obj, "scale", index=0, text="X")
-    col.prop(obj, "scale", index=1, text="Y")
-    col.prop(obj, "scale", index=2, text="Z")
-```
-
-### Row Layout
-```python
-def draw(self, context):
-    layout = self.layout
-
-    # Basic row
-    row = layout.row()
-    row.prop(obj, "hide_viewport")
-    row.prop(obj, "hide_render")
-
-    # Aligned row (buttons touching)
-    row = layout.row(align=True)
-    row.operator("object.select_all", text="All").action = 'SELECT'
-    row.operator("object.select_all", text="None").action = 'DESELECT'
-    row.operator("object.select_all", text="Invert").action = 'INVERT'
-```
-
-### Box Layout
-```python
-def draw(self, context):
-    layout = self.layout
-
-    # Framed section
-    box = layout.box()
-    box.label(text="Transform", icon='OBJECT_ORIGIN')
-
-    col = box.column(align=True)
-    col.prop(obj, "location")
-    col.prop(obj, "rotation_euler")
-    col.prop(obj, "scale")
-```
-
-### Split Layout
-```python
-def draw(self, context):
-    layout = self.layout
-
-    # Proportional split
-    split = layout.split(factor=0.3)
-    split.label(text="Name:")
-    split.prop(obj, "name", text="")
-
-    # Multiple columns
-    split = layout.split(factor=0.5)
-    col1 = split.column()
-    col2 = split.column()
-    col1.prop(obj, "location")
-    col2.prop(obj, "scale")
-```
-
-### Grid Flow
-```python
-def draw(self, context):
-    layout = self.layout
-
-    # Even grid
-    grid = layout.grid_flow(columns=3, even_columns=True, align=True)
-    for i in range(9):
-        grid.operator("mesh.primitive_cube_add", text=str(i+1))
-
-    # Auto columns based on width
-    grid = layout.grid_flow(columns=0, even_columns=True)
-    # Blender determines column count
-```
-
-## Property Widgets
-
-### Standard Properties
-```python
-def draw(self, context):
-    layout = self.layout
-    props = context.scene.my_props
-
-    # Label + widget
-    layout.prop(props, "my_float")
-
-    # No label
-    layout.prop(props, "my_float", text="")
-
-    # Custom label
-    layout.prop(props, "my_float", text="Custom Label")
-
-    # With icon
-    layout.prop(props, "my_bool", icon='CHECKBOX_HLT')
-
-    # Icon only (for toggles)
-    layout.prop(props, "my_bool", icon_only=True)
-```
-
-### Enum Properties
-```python
-def draw(self, context):
-    layout = self.layout
-    props = context.scene.my_props
-
-    # Dropdown
-    layout.prop(props, "my_enum")
-
-    # Expanded (radio buttons)
-    layout.prop(props, "my_enum", expand=True)
-
-    # Icon menu
-    layout.prop_menu_enum(props, "my_enum")
-```
-
-### Vector Properties
-```python
-def draw(self, context):
-    layout = self.layout
-    obj = context.active_object
-
-    # Full vector
-    layout.prop(obj, "location")
-
-    # Single component
-    layout.prop(obj, "location", index=0, text="X")
-
-    # As slider
-    layout.prop(obj, "scale", slider=True)
-```
-
-### Search/Pointer Properties
-```python
-def draw(self, context):
-    layout = self.layout
-    props = context.scene.my_props
-
-    # Object search
-    layout.prop_search(props, "target_object", bpy.data, "objects")
-
-    # Material search
-    layout.prop_search(props, "target_material", bpy.data, "materials")
-
-    # Collection search
-    layout.prop_search(props, "target_collection", bpy.data, "collections")
-
-    # Vertex group search (on active object)
-    if context.active_object:
-        layout.prop_search(props, "vertex_group",
-                          context.active_object, "vertex_groups")
-```
-
-## Icons
-
-### Using Icons
-```python
-def draw(self, context):
-    layout = self.layout
-
-    # Label with icon
-    layout.label(text="My Label", icon='MESH_CUBE')
-
-    # Operator with icon
-    layout.operator("mesh.primitive_cube_add", icon='MESH_CUBE')
-
-    # Icon button only
-    layout.operator("mesh.primitive_cube_add", text="", icon='MESH_CUBE')
-
-    # Row of icon buttons
-    row = layout.row(align=True)
-    row.operator("object.select_all", text="", icon='CHECKBOX_HLT').action = 'SELECT'
-    row.operator("object.select_all", text="", icon='CHECKBOX_DEHLT').action = 'DESELECT'
-```
-
-### Common Icons
-```
-Object types: MESH_CUBE, MESH_UVSPHERE, MESH_CYLINDER, CURVE_DATA, EMPTY_DATA
-UI: ADD, REMOVE, TRIA_DOWN, TRIA_RIGHT, CHECKBOX_HLT, CHECKBOX_DEHLT
-Actions: PLAY, PAUSE, REW, FF, PREVIEW_RANGE
-File: FILE, FILE_FOLDER, FILE_NEW, FILE_BLEND
-Tools: TOOL_SETTINGS, MODIFIER, CONSTRAINT, SHADERFX
-Status: ERROR, INFO, QUESTION, CANCEL, CHECKMARK
-```
-
-### Find Icons
-```python
-# In Blender Python console:
-import bpy.types
-icons = [attr for attr in dir(bpy.types.UILayout.bl_rna)
-         if attr.startswith('icon_')]
-
-# Or use Edit > Preferences > Interface > Developer Extras
-# Then access icon viewer in any icon field
-```
-
-## Panel Organization
-
-### Subpanels
-```python
-class VIEW3D_PT_main_panel(bpy.types.Panel):
-    bl_label = "Main Panel"
-    bl_idname = "VIEW3D_PT_main_panel"
+class ADDON_NAME_PT_panel(bpy.types.Panel):
+    """Main controls for Addon Name"""
+    bl_label = "Addon Name"
+    bl_idname = "ADDON_NAME_PT_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "My Tab"
+    bl_category = "Addon Name"
 
     def draw(self, context):
-        self.layout.label(text="Main content")
+        layout = self.layout
+        props = context.scene.addon_name
+        row = layout.row()
+        row.scale_y = 1.5                      # the one primary action is the only tall row
+        row.operator("addon_name.example", icon='PLAY')
+        _draw_settings(layout, props)
+```
 
-class VIEW3D_PT_sub_panel(bpy.types.Panel):
-    bl_label = "Sub Panel"
-    bl_idname = "VIEW3D_PT_sub_panel"
+Group with `layout.separator()` between groups and `separator(factor=0.5)` inside a group. A panel with no gaps reads as one undifferentiated stack.
+
+## Settings section closed by default
+
+Draw the disclosure by hand so it stays level with the panel contents. A sub-panel header and `layout.panel()` are both inset by Blender. Both the triangle and the label drive one BoolProperty (default `False`):
+
+```python
+def _draw_settings(layout, props):
+    open_ = props.show_settings
+    layout.separator()
+    row = layout.row(align=True)
+    row.alignment = 'LEFT'                     # otherwise the label floats mid-panel
+    row.prop(props, "show_settings", text="", emboss=False,
+             icon='TRIA_DOWN' if open_ else 'TRIA_RIGHT')
+    row.prop(props, "show_settings", text="Settings", emboss=False, icon='PREFERENCES')
+    if open_:
+        col = layout.column(align=True)
+        col.prop(props, "keep_format")
+```
+
+`layout.panel(idname, default_closed=True)` (4.1+) returns `(header, body)` with `body` `None` when closed. It is fine inside dialogs and preferences, where the inset does not matter.
+
+A collapsed section can still answer its question in the header: a folded "Output" block can show the output folder, greyed, after the title.
+
+## Status line and self-describing toggles
+
+```python
+hint = col.row()
+hint.enabled = False                           # greyed: information, not a control
+hint.label(text=caption)
+
+# A toggle whose text says what is happening now, not a checkbox that contradicts itself
+col.prop(props, "keep_format", toggle=True,
+         text="Ignore Format Settings" if props.keep_format else "Use Format Settings")
+```
+
+Keep the layout the same shape across states: draw a button disabled (`row.enabled = False`) rather than removing it, so the panel does not jump.
+
+## Confirmations and previews
+
+Irreversible action, short question:
+
+```python
+def invoke(self, context, event):
+    return context.window_manager.invoke_confirm(
+        self, event, title="Overwrite Preset?",
+        message="The file on disk is replaced with your current settings.",
+        confirm_text="Overwrite", icon='WARNING')
+```
+
+Preview with counts before a big change (`invoke_props_dialog` plus `draw`):
+
+```python
+copies: IntProperty(options={'SKIP_SAVE', 'HIDDEN'})
+groups: IntProperty(options={'SKIP_SAVE', 'HIDDEN'})
+
+def invoke(self, context, event):
+    self.copies, self.groups = count_duplicates()
+    if not self.copies:
+        self.report({'INFO'}, "No duplicate materials to merge")
+        return {'CANCELLED'}
+    return context.window_manager.invoke_props_dialog(
+        self, width=360, title="Merge Materials?", confirm_text="Merge")
+
+def draw(self, context):
+    self.layout.label(text=f"{self.copies} materials merge into {self.groups}.", icon='INFO')
+```
+
+`invoke_confirm` icons: `NONE`, `WARNING`, `QUESTION`, `ERROR`, `INFO`. Dialog labels do not wrap: keep each line under about 50 characters at width 360. Blender fixes the second button to "Cancel", so say in the text what Cancel does if it is not obvious.
+
+## Lists
+
+`template_list` with row actions as icon-only, `emboss=False` operators at the end of the row, destructive one last and furthest from the most used one. Size the list to its contents: `rows=min(max(len(items), 3), 6)`. Hide the list and show an empty-state label when there is nothing in it. For references that can go missing, draw `f"Missing: {item.name}"` with `icon='ERROR'` instead of hiding the row.
+
+## Header buttons and popovers
+
+A header button is for a one-click action or a popover with the whole panel. Show state on the icon itself (`depress=True` while there is work to do). Let the user switch the header and sidebar placements off in preferences, but never both (an update callback turns the other back on).
+
+```python
+def draw_header(self, context):
+    self.layout.popover("ADDON_NAME_PT_header_popover", text="", icon='PRESET')
+# register: bpy.types.VIEW3D_HT_header.append(draw_header); unregister: .remove(draw_header)
+```
+
+Popover panels use `bl_region_type = 'HEADER'` and `bl_ui_units_x` for width.
+
+## The links footer (legacy builds only)
+
+Two centred icon buttons: globe (`URL`) to `WEBSITE_URL`, `HELP` to `BUG_REPORT_URL`. Both constants live at the top of `panels.py`, start empty, and `draw_links()` draws nothing while both are empty, so fill them in before shipping a legacy build. In the sidebar it is a header-less sub-panel with `bl_order = 100` so it always sits last:
+
+```python
+WEBSITE_URL = ""
+BUG_REPORT_URL = ""
+
+
+def draw_links(layout):
+    if not (WEBSITE_URL or BUG_REPORT_URL):
+        return
+    row = layout.row()
+    row.alignment = 'CENTER'
+    if WEBSITE_URL:
+        row.operator("wm.url_open", text="", icon='URL').url = WEBSITE_URL
+    if BUG_REPORT_URL:
+        row.operator("wm.url_open", text="", icon='HELP').url = BUG_REPORT_URL
+
+
+class ADDON_NAME_PT_links(bpy.types.Panel):
+    """Links to the author's website and the bug report page"""
+    bl_label = ""
+    bl_idname = "ADDON_NAME_PT_links"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "My Tab"
-    bl_parent_id = "VIEW3D_PT_main_panel"  # Makes this a subpanel
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_category = "Addon Name"
+    bl_parent_id = "ADDON_NAME_PT_panel"
+    bl_options = {'HIDE_HEADER'}
+    bl_order = 100
 
     def draw(self, context):
-        self.layout.label(text="Sub content")
+        draw_links(self.layout)
 ```
 
-### Panel Header
-```python
-class VIEW3D_PT_with_header(bpy.types.Panel):
-    bl_label = "My Panel"
-    # ...
+The same row, after a `separator()`, ends `AddonPreferences.draw`. An add-on with no settings still gets an `AddonPreferences` class that draws only this row.
 
-    def draw_header(self, context):
-        layout = self.layout
-        props = context.scene.my_props
+**Extensions builds carry no footer.** Rule 6.1 of the extensions platform bans links to commercial or funding sites and donation buttons inside Blender's UI. Before uploading to extensions.blender.org, delete `ADDON_NAME_PT_links`, `draw_links` and the call in preferences by hand (and drop the class from the tuple and the README line about the buttons). `python build.py package --extension` warns, but still builds, while either URL is set.
 
-        # Toggle in header
-        layout.prop(props, "enabled", text="")
+## Preferences screen
 
-    def draw(self, context):
-        layout = self.layout
-        props = context.scene.my_props
+Group with `layout.column(heading="Show In")` and `column(heading="Settings")` rather than boxes of labels. Preferences hold defaults for new scenes and where the UI appears; per-file choices live on the scene.
 
-        # Disable panel content based on toggle
-        layout.enabled = props.enabled
-        layout.prop(props, "my_value")
-```
+## Draw code must be cheap and read-only
 
-### Conditional Panels
-```python
-class VIEW3D_PT_conditional(bpy.types.Panel):
-    bl_label = "Mesh Only Panel"
-    # ...
+- Never write to a property in `draw()`; it can loop redraws. Do migrations and backfills in a `load_post` handler.
+- Anything that walks `bpy.data` in `draw()` must be cached and invalidated by handlers, and throttled if it can run during a modal grab (for example scan at most every 0.25 s and stop at the first hit; see `blender-performance`).
+- Check that the pointer is valid before drawing through it; a deleted ID returns `None`.
 
-    @classmethod
-    def poll(cls, context):
-        # Only show for mesh objects
-        return (context.active_object is not None and
-                context.active_object.type == 'MESH')
+## Layout mechanics
 
-    def draw(self, context):
-        # ...
-```
+- `column(align=True)` and `row(align=True)` pack buttons together; plain ones leave gaps.
+- `layout.split(factor=0.3)` for label and field; `grid_flow(columns=0, even_columns=True)` for many checkboxes.
+- `row.enabled = False` greys and blocks; `row.active = False` greys but stays clickable; `row.alert = True` tints red for problems.
+- `layout.prop(..., expand=True)` turns an enum into a segmented row, good for 2 to 4 modes (Global / This File).
+- `layout.progress(factor=, type='BAR', text=)` draws a progress bar for a running batch.
+- `prop_search` or a `PointerProperty` field for picking objects and collections; the field keeps working after a rename.
+- Icon names: browse with the Icon Viewer add-on, or read `bpy.types.UILayout.bl_rna.functions["prop"].parameters["icon"].enum_items`.
 
-## Operator Invocation from UI
+## Before calling a panel done
 
-### Basic Operator Button
-```python
-def draw(self, context):
-    layout = self.layout
-
-    # Simple button
-    layout.operator("mesh.primitive_cube_add")
-
-    # With custom text
-    layout.operator("mesh.primitive_cube_add", text="Add Box")
-
-    # With icon
-    layout.operator("mesh.primitive_cube_add", text="Add Box", icon='MESH_CUBE')
-```
-
-### Operator with Properties
-```python
-def draw(self, context):
-    layout = self.layout
-
-    # Set operator properties
-    op = layout.operator("transform.translate")
-    op.value = (1, 0, 0)
-
-    # Multiple properties
-    op = layout.operator("mesh.primitive_cube_add")
-    op.size = 2.0
-    op.location = (0, 0, 1)
-```
-
-### Operator Menu
-```python
-def draw(self, context):
-    layout = self.layout
-
-    # Dropdown menu of operators
-    layout.operator_menu_enum("object.modifier_add", "type")
-
-    # Custom menu
-    layout.menu("VIEW3D_MT_my_menu")
-```
-
-## Custom Property Drawing
-
-### UIList
-```python
-class MY_UL_items(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            row = layout.row(align=True)
-            row.prop(item, "name", text="", emboss=False)
-            row.prop(item, "enabled", text="")
-        elif self.layout_type == 'GRID':
-            layout.label(text=item.name, icon='OBJECT_DATA')
-
-# Usage in panel
-def draw(self, context):
-    layout = self.layout
-    props = context.scene.my_props
-
-    row = layout.row()
-    row.template_list("MY_UL_items", "", props, "items", props, "active_index")
-
-    col = row.column(align=True)
-    col.operator("my.add_item", icon='ADD', text="")
-    col.operator("my.remove_item", icon='REMOVE', text="")
-```
-
-### Popover
-```python
-class MY_PT_popover(bpy.types.Panel):
-    bl_label = "Popover Content"
-    bl_idname = "MY_PT_popover"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'WINDOW'  # Important for popovers
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(context.scene.my_props, "my_value")
-
-# Usage
-def draw(self, context):
-    layout = self.layout
-    layout.popover("MY_PT_popover", text="Settings")
-```
-
-## Visual Hierarchy
-
-### Separator and Spacing
-```python
-def draw(self, context):
-    layout = self.layout
-
-    layout.label(text="Section 1")
-    layout.prop(obj, "location")
-
-    layout.separator()  # Visual gap
-
-    layout.label(text="Section 2")
-    layout.prop(obj, "rotation_euler")
-
-    layout.separator(factor=2.0)  # Larger gap
-```
-
-### Enabled/Active States
-```python
-def draw(self, context):
-    layout = self.layout
-    props = context.scene.my_props
-
-    # Disable entire section
-    col = layout.column()
-    col.enabled = props.section_enabled
-    col.prop(props, "value1")
-    col.prop(props, "value2")
-
-    # Gray out (but still clickable)
-    row = layout.row()
-    row.active = props.is_active
-    row.prop(props, "value3")
-```
-
-### Alert State
-```python
-def draw(self, context):
-    layout = self.layout
-
-    # Warning/alert styling
-    row = layout.row()
-    row.alert = True
-    row.label(text="Warning!", icon='ERROR')
-```
-
-## Best Practices
-
-### Consistency with Blender UI
-- Follow existing panel patterns in Blender
-- Use standard icons for common actions
-- Match layout density to similar panels
-- Use familiar terminology
-
-### User Experience
-- Group related controls together
-- Show only relevant options
-- Provide sensible defaults
-- Use appropriate widget for data type
-
-### Performance
-- Avoid heavy computation in draw()
-- Don't modify data in draw()
-- Cache expensive lookups
-
-## Resources
-- UI Layout: https://docs.blender.org/api/current/bpy.types.UILayout.html
-- Panel: https://docs.blender.org/api/current/bpy.types.Panel.html
-- UIList: https://docs.blender.org/api/current/bpy.types.UIList.html
+- Could any control be removed, merged, or moved into Settings?
+- Can the user tell the current mode without hovering?
+- Is every data-changing operator undoable, and every irreversible one confirmed?
+- Does every action report what it did?
+- Links footer in the sidebar and in preferences for a legacy build, and none for an extensions build?
+- README "How to use" lists every visible control in the order the user meets it (`addon-writing`).

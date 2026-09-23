@@ -1,74 +1,44 @@
 ---
-description: Test the addon in Blender
-allowed-tools: Bash, Read, Glob
+description: Run the add-on's headless tests on BLENDER_MIN and BLENDER_LATEST, and optionally the fresh-install test on the built zips
+argument-hint: "[fresh]"
+allowed-tools: Bash, Read, Glob, Grep, Edit
 ---
 
-Test the addon by reloading scripts and checking for errors.
+Run every test for the add-on on both Blenders, from the repo root. `<BLENDER_MIN>` and `<BLENDER_LATEST>` are the paths in the "Blender installs" section of `CLAUDE.md`; the package is `ADDON_FOLDER` in `build.py`.
 
-**Process:**
+1. **Operator list up to date.** Compare `OPERATORS` in `tests/test_blender_smoke.py` with every operator `bl_idname` in the package. Add missing ones, remove deleted ones, and say what you changed.
 
-1. **Validate addon structure:**
-   - Check `__init__.py` exists and has `bl_info`
-   - Verify all imported modules exist
-   - Check registration functions are defined
-
-2. **Check for common issues:**
-   - Missing `bl_idname` in operators/panels
-   - Incorrect ID naming conventions
-   - Missing `poll()` methods where needed
-   - Circular imports
-   - Undefined references
-
-3. **Generate reload script:**
-   ```python
-   # Run this in Blender's Python console or Text Editor
-   import bpy
-   import importlib
-   import sys
-
-   addon_name = "addon_name"  # Replace with actual addon name
-
-   # Remove cached modules
-   modules_to_remove = [key for key in sys.modules.keys()
-                        if addon_name in key]
-   for module in modules_to_remove:
-       del sys.modules[module]
-
-   # Disable and re-enable addon
-   try:
-       bpy.ops.preferences.addon_disable(module=addon_name)
-   except:
-       pass
-
-   bpy.ops.preferences.addon_enable(module=addon_name)
-   print(f"Addon '{addon_name}' reloaded successfully")
+2. **Smoke test, both versions:**
    ```
+   "<BLENDER_MIN>" --background --factory-startup --python tests/test_blender_smoke.py
+   "<BLENDER_LATEST>" --background --factory-startup --python tests/test_blender_smoke.py
+   ```
+   Pass = output contains `SMOKE OK`. It also asserts bl_info and the manifest agree on name, version and minimum Blender. Keep `--factory-startup`: without it a copy of the add-on installed in your own Blender shadows the repo copy.
 
-4. **Verification checklist:**
-   - [ ] Addon appears in Preferences > Add-ons
-   - [ ] No errors in console on enable
-   - [ ] Operators appear in F3 search
-   - [ ] Panels appear in correct locations
-   - [ ] Properties are accessible
-   - [ ] Operators execute without errors
-   - [ ] Undo/redo works correctly
+3. **Extra tests.** Run every other file in `tests/` the same way on both versions. A plain-Python test (no `import bpy`) runs with `python tests/<file>.py`. Read each file's header to tell which.
 
-5. **Test edge cases:**
-   - Run operators with no selection
-   - Run operators in different modes (Object, Edit, etc.)
-   - Test with different object types
-   - Check behavior with multiple objects selected
+4. **Fresh install** (when `$ARGUMENTS` says `fresh`, or before a release). Build first (`/build both`, or just legacy), then install each zip into a throwaway Blender config, so your real one is never touched. Put the script and temp dirs in a temp or scratchpad folder, not the repo.
 
-**Common Error Solutions:**
+   Legacy zip, script `fresh_legacy.py`:
+   ```python
+   import sys, bpy, addon_utils
+   zip_path, module = sys.argv[sys.argv.index("--") + 1:]
+   bpy.ops.preferences.addon_install(filepath=zip_path, overwrite=True)
+   mod = addon_utils.enable(module, default_set=True)
+   print("FRESH", "OK" if mod else "FAIL", mod.__file__ if mod else "")
+   ```
+   ```
+   BLENDER_USER_RESOURCES=<empty temp dir> "<BLENDER_MIN>" --background --factory-startup --python fresh_legacy.py -- <legacy zip> <package>
+   ```
+   Extension zip, with a second empty temp dir:
+   ```
+   BLENDER_USER_RESOURCES=<empty temp dir> "<BLENDER_MIN>" --command extension install-file -r user_default <extension zip>
+   BLENDER_USER_RESOURCES=<same dir> "<BLENDER_MIN>" --background --factory-startup --python-expr "import addon_utils; m = addon_utils.enable('bl_ext.user_default.<package>', default_set=True); print('FRESH', 'OK' if m else 'FAIL')"
+   ```
+   Pass = `FRESH OK`, with the module loaded from inside the temp dir. Repeat on `BLENDER_LATEST`. In PowerShell set the variable first with `$env:BLENDER_USER_RESOURCES = "<dir>"`.
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `AttributeError: module has no attribute` | Import issue | Check module imports and file names |
-| `RuntimeError: register_class(...): already registered` | Double registration | Check classes list for duplicates |
-| `ReferenceError: StructRNA removed` | Accessing deleted data | Refresh references after operations |
-| `poll() failed, context incorrect` | Wrong context | Add proper poll() check |
+5. **Report** a table of test by version with PASS/FAIL. For a failure, show the last lines of the traceback and the likely cause with file:line. Do not fix anything unless asked.
 
-**Report results:**
-- List any errors found
-- Confirm successful tests
-- Suggest fixes for issues
+6. Remind the user that undo (Ctrl+Z) cannot be tested headless; list the operators whose undo they should try in a real window.
+
+For live testing inside the running Blender, use `/test-in-blender`.

@@ -1,246 +1,42 @@
 ---
-description: Find code examples from Blender docs
-argument-hint: "<api-name>"
-allowed-tools: WebFetch, WebSearch, Read
+description: Find a working Blender 5.x code example for a task, and prove it runs before handing it over
+argument-hint: "<task, e.g. 'add a modifier' or 'react to file load'>"
+allowed-tools: WebFetch, WebSearch, Read, Grep, Bash, mcp__blender__bpy_api_lookup
 ---
 
-Search for working code examples from official Blender documentation.
+Find code for `$ARGUMENTS` that works on `BLENDER_MIN` and `BLENDER_LATEST` (the paths in the "Blender installs" section of `CLAUDE.md`).
 
-**Ask user:**
-What do you want to do? Examples:
-- "create a modifier"
-- "add keyframe"
-- "create material with nodes"
-- "bmesh extrude"
-- "custom property"
+1. **Look in the repo and skills first.** The package and the skills in `.claude/skills/` already hold many patterns. `Grep` for the API involved and prefer a pattern already in use.
+2. **Then the docs**, versioned to the minimum: `https://docs.blender.org/api/5.0/` (or whatever bl_info `"blender"` says). Many class pages end with runnable examples. `mcp__blender__bpy_api_lookup` if the MCP is connected.
+3. **Run it before handing it over.** Save the snippet to a temp or scratchpad folder, not the repo, and run it headless on both versions:
+   ```
+   "<BLENDER_MIN>" --background --factory-startup --python <snippet.py>
+   "<BLENDER_LATEST>" --background --factory-startup --python <snippet.py>
+   ```
+   Timers do not fire in a background script that exits, and undo is unavailable; say so if the example depends on either.
+4. **Give** the snippet in house style, one line on the key call, the gotcha if any, and the doc link.
 
-**Process:**
+## House idioms (verified on 5.0 and 5.2)
 
-1. **Identify relevant API:**
-   - Map task to Blender API modules
-   - Find official documentation examples
-
-2. **Search documentation sources:**
-   - API reference code examples
-   - Addon tutorial examples
-   - Template files from Blender
-
-3. **Provide working examples:**
-
-**Common Tasks with Examples:**
-
----
-
-**Creating Objects:**
 ```python
-import bpy
+# Store object references as pointers so they survive renames
+class ADDON_NAME_PG_item(bpy.types.PropertyGroup):
+    target: bpy.props.PointerProperty(type=bpy.types.Object)
 
-# Add mesh primitive
-bpy.ops.mesh.primitive_cube_add(location=(0, 0, 0))
-obj = bpy.context.active_object
-obj.name = "MyCube"
+# First-time scene setup: never inside register(), it raises _RestrictData
+def _first_run():
+    ...
+    return None  # run once
+bpy.app.timers.register(_first_run, first_interval=0)
 
-# Create mesh from scratch
-mesh = bpy.data.meshes.new("MyMesh")
-obj = bpy.data.objects.new("MyObject", mesh)
-bpy.context.collection.objects.link(obj)
+# Handler that survives opening another file; remove it in unregister()
+from bpy.app.handlers import persistent
+@persistent
+def _on_load(_):
+    ...
+bpy.app.handlers.load_post.append(_on_load)
 
-# Set mesh data
-verts = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]
-faces = [(0, 1, 2, 3)]
-mesh.from_pydata(verts, [], faces)
-mesh.update()
+# New materials already have a node tree in 5.x; find nodes by type, not name
+mat = bpy.data.materials.new("Mask")
+bsdf = next(n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
 ```
-
----
-
-**Adding Modifiers:**
-```python
-import bpy
-
-obj = bpy.context.active_object
-
-# Add subdivision surface
-subsurf = obj.modifiers.new(name="Subdivision", type='SUBSURF')
-subsurf.levels = 2
-subsurf.render_levels = 3
-
-# Add bevel
-bevel = obj.modifiers.new(name="Bevel", type='BEVEL')
-bevel.width = 0.1
-bevel.segments = 3
-bevel.affect = 'EDGES'
-
-# Apply modifier
-bpy.context.view_layer.objects.active = obj
-bpy.ops.object.modifier_apply(modifier="Subdivision")
-```
-
----
-
-**Creating Materials:**
-```python
-import bpy
-
-# Create new material
-mat = bpy.data.materials.new(name="MyMaterial")
-mat.use_nodes = True
-
-# Get node tree
-nodes = mat.node_tree.nodes
-links = mat.node_tree.links
-
-# Clear default nodes
-nodes.clear()
-
-# Add nodes
-output = nodes.new('ShaderNodeOutputMaterial')
-output.location = (300, 0)
-
-bsdf = nodes.new('ShaderNodeBsdfPrincipled')
-bsdf.location = (0, 0)
-bsdf.inputs['Base Color'].default_value = (0.8, 0.1, 0.1, 1.0)
-bsdf.inputs['Metallic'].default_value = 0.5
-
-# Connect nodes
-links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
-
-# Assign to object
-obj = bpy.context.active_object
-if obj.data.materials:
-    obj.data.materials[0] = mat
-else:
-    obj.data.materials.append(mat)
-```
-
----
-
-**Animation/Keyframes:**
-```python
-import bpy
-
-obj = bpy.context.active_object
-
-# Insert keyframe at current frame
-obj.location = (0, 0, 0)
-obj.keyframe_insert(data_path="location", frame=1)
-
-# Insert keyframe at specific frame
-obj.location = (5, 0, 0)
-obj.keyframe_insert(data_path="location", frame=50)
-
-# With index (single axis)
-obj.keyframe_insert(data_path="location", frame=100, index=0)  # X only
-
-# Delete keyframe
-obj.keyframe_delete(data_path="location", frame=50)
-```
-
----
-
-**BMesh Operations:**
-```python
-import bpy
-import bmesh
-
-obj = bpy.context.active_object
-mesh = obj.data
-
-# Create BMesh
-bm = bmesh.new()
-bm.from_mesh(mesh)
-
-# Ensure lookup tables
-bm.verts.ensure_lookup_table()
-bm.edges.ensure_lookup_table()
-bm.faces.ensure_lookup_table()
-
-# Extrude faces
-faces_to_extrude = [f for f in bm.faces if f.select]
-result = bmesh.ops.extrude_face_region(bm, geom=faces_to_extrude)
-verts = [v for v in result['geom'] if isinstance(v, bmesh.types.BMVert)]
-bmesh.ops.translate(bm, vec=(0, 0, 1), verts=verts)
-
-# Subdivide
-bmesh.ops.subdivide_edges(bm, edges=bm.edges, cuts=2)
-
-# Write back and free
-bm.to_mesh(mesh)
-bm.free()
-mesh.update()
-```
-
----
-
-**Custom Properties:**
-```python
-import bpy
-from bpy.props import FloatProperty, IntProperty, EnumProperty
-
-class MyPropertyGroup(bpy.types.PropertyGroup):
-    my_float: FloatProperty(
-        name="My Float",
-        description="A float property",
-        default=1.0,
-        min=0.0,
-        max=10.0,
-    )
-
-    my_enum: EnumProperty(
-        name="My Enum",
-        items=[
-            ('OPT_A', "Option A", "First option"),
-            ('OPT_B', "Option B", "Second option"),
-        ],
-        default='OPT_A',
-    )
-
-# Registration
-bpy.utils.register_class(MyPropertyGroup)
-bpy.types.Scene.my_props = bpy.props.PointerProperty(type=MyPropertyGroup)
-
-# Access
-props = bpy.context.scene.my_props
-props.my_float = 5.0
-```
-
----
-
-**UI Panel:**
-```python
-import bpy
-
-class MY_PT_panel(bpy.types.Panel):
-    bl_label = "My Panel"
-    bl_idname = "MY_PT_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "My Tab"
-
-    def draw(self, context):
-        layout = self.layout
-        scene = context.scene
-
-        # Properties
-        layout.prop(scene.my_props, "my_float")
-        layout.prop(scene.my_props, "my_enum")
-
-        # Operators
-        layout.operator("mesh.primitive_cube_add", text="Add Cube")
-
-        # Layout options
-        row = layout.row(align=True)
-        row.operator("object.select_all", text="Select").action = 'SELECT'
-        row.operator("object.select_all", text="Deselect").action = 'DESELECT'
-
-        box = layout.box()
-        box.label(text="Boxed Section")
-```
-
----
-
-**Output:**
-- Working code example for requested task
-- Explanation of key parts
-- Link to full documentation
-- Related examples
