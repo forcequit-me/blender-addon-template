@@ -12,7 +12,7 @@ Read the package's `__init__.py`, `operators.py` and `panels.py` first and copy 
 
 ```python
 class <PREFIX>_OT_<name>(bpy.types.Operator):
-    bl_idname = "<package>.<name>"
+    bl_idname = "wm.<package>_<name>"  # wm. so right-click > Assign Shortcut shows up
     bl_label = "<Short Verb Phrase>"
     bl_description = "<One line: what happens when you click>"
     bl_options = {'REGISTER', 'UNDO'}

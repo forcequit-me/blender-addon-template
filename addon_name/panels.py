@@ -33,7 +33,7 @@ class ADDON_NAME_PT_panel(Panel):
         layout = self.layout
         props = context.scene.addon_name
 
-        layout.operator("addon_name.example")
+        layout.operator("wm.addon_name_example")
 
         # Settings fold away so the panel stays short until you need them.
         box = layout.box()

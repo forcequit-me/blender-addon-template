@@ -50,8 +50,8 @@ Check the printed path is inside the repo. `default_set=False` keeps the user's 
 Loaded from: <path>
 | Operator | Case | Result | Notes |
 |---|---|---|---|
-| addon_name.example | 3 selected | FINISHED | 3 changed |
-| addon_name.example | none selected | CANCELLED | "No objects selected" |
+| wm.addon_name_example | 3 selected | FINISHED | 3 changed |
+| wm.addon_name_example | none selected | CANCELLED | "No objects selected" |
 
 Problems: <what, where in the code if you can tell>
 For the user to check by hand: <undo, UI feel>

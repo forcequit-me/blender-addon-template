@@ -36,7 +36,7 @@ If an API exists in the newest release but not the minimum, it cannot be used wi
 - Property update callbacks that can trigger each other.
 
 **House patterns**
-- `bl_idname` for operators is `<package>.<name>`; classes are `<PREFIX>_OT_`, `_PT_`, `_UL_`, `_PG_`, `_MT_`.
+- `bl_idname` for operators is `wm.<package>_<name>` (other prefixes get no Assign Shortcut); classes are `<PREFIX>_OT_`, `_PT_`, `_UL_`, `_PG_`, `_MT_`.
 - Operators that change data use `bl_options = {'REGISTER', 'UNDO'}` and `self.report()` what they did.
 
 ## Output

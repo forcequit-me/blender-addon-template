@@ -3,7 +3,7 @@ from bpy.types import Operator
 
 class ADDON_NAME_OT_example(Operator):
     """Select the target object and make it active"""
-    bl_idname = "addon_name.example"
+    bl_idname = "wm.addon_name_example"
     bl_label = "Example"
     # UNDO because it changes selection; every operator that changes data needs it.
     bl_options = {'REGISTER', 'UNDO'}

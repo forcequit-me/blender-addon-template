@@ -38,7 +38,7 @@ The template uses these placeholders. `/setup-addon` renames all of them in plac
 | `ADDON_NAME_` | class prefix (`ADDON_NAME_OT_example`, `ADDON_NAME_PT_panel`) |
 | `Addon Name` | display name: bl_info and manifest `name`, sidebar tab (`bl_category`), panel label, README title |
 | `Your Name` | bl_info `author`, manifest `maintainer` |
-| `addon_name.example` | the example operator's idname |
+| `wm.addon_name_example` | the example operator's idname |
 
 Every renamed name must still be found by `grep`: after a rename, search for the old placeholders and expect no hits. Once an add-on has shipped, never rename its package. Installed copies keep their preferences under the package name.
 

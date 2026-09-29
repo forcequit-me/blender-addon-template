@@ -36,7 +36,7 @@ Registration check without running anything:
 
 ```python
 import bpy
-for op in ("addon_name.example",):
+for op in ("wm.addon_name_example",):
     cat, name = op.split(".")
     print(op, getattr(getattr(bpy.ops, cat), name).get_rna_type().name)
 print([c for c in dir(bpy.types) if c.startswith("ADDON_NAME_")])
@@ -47,7 +47,7 @@ print([c for c in dir(bpy.types) if c.startswith("ADDON_NAME_")])
 ```python
 import bpy
 before = {o.name for o in bpy.data.objects}
-result = bpy.ops.addon_name.example()
+result = bpy.ops.wm.addon_name_example()
 after = {o.name for o in bpy.data.objects}
 print(result, "removed:", sorted(before - after)[:20], "added:", sorted(after - before)[:20])
 ```
@@ -80,7 +80,7 @@ for area in bpy.context.window_manager.windows[0].screen.areas:
 ```python
 import bpy, time
 t = time.perf_counter()
-bpy.ops.addon_name.example()
+bpy.ops.wm.addon_name_example()
 print(f"{(time.perf_counter() - t) * 1000:.1f} ms")
 ```
 

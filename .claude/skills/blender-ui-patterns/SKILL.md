@@ -39,7 +39,7 @@ class ADDON_NAME_PT_panel(bpy.types.Panel):
         props = context.scene.addon_name
         row = layout.row()
         row.scale_y = 1.5                      # the one primary action is the only tall row
-        row.operator("addon_name.example", icon='PLAY')
+        row.operator("wm.addon_name_example", icon='PLAY')
         _draw_settings(layout, props)
 ```
 

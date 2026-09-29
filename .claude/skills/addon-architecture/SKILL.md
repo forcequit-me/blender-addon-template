@@ -87,7 +87,7 @@ def unregister():
 
 Rules:
 
-- Class names follow `PREFIX_OT_name`, `PREFIX_PT_name`, `PREFIX_UL_name`, `PREFIX_MT_name`. `bl_idname` of an operator is `prefix.name`, lower case.
+- Class names follow `PREFIX_OT_name`, `PREFIX_PT_name`, `PREFIX_UL_name`, `PREFIX_MT_name`. `bl_idname` of an operator is `wm.prefix_name`, lower case. Blender only offers right-click > Assign Shortcut for operator prefixes it knows (`wm.`, `object.`, `view3d.`...), so a custom `prefix.name` gets no shortcut; `wm.` puts the key in the Window keymap, which works in every editor.
 - Prefer one `PointerProperty` to a PropertyGroup (`scene.addon_name.x`) over many loose `Scene.addon_name_x` properties. If a shipped add-on already uses loose ones, do not rewrite them: saved files hold those names.
 - `unregister()` must not raise before `unregister_class` runs, or the add-on cannot be re-enabled without restarting Blender. Guard every removal (`if fn in list`, `if bpy.app.timers.is_registered(fn)`, `try: header.remove(fn) except ValueError`).
 - Module globals survive disable and enable because the module stays in `sys.modules`. Reset caches and flags in `unregister()`.
@@ -196,7 +196,7 @@ def register_keymaps():
     if kc is None:                         # None in --background
         return
     km = kc.keymaps.new(name='Window', space_type='EMPTY')
-    kmi = km.keymap_items.new("addon_name.example", type='E', value='PRESS', shift=True, alt=True)
+    kmi = km.keymap_items.new("wm.addon_name_example", type='E', value='PRESS', shift=True, alt=True)
     addon_keymaps.append((km, kmi))
 
 def unregister_keymaps():

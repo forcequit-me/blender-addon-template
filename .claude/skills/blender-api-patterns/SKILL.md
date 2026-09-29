@@ -19,7 +19,7 @@ Reference: https://docs.blender.org/api/current/ and the gotchas page https://do
 ```python
 class ADDON_NAME_OT_delete_empties(bpy.types.Operator):
     """Delete every empty of the ticked types in the whole file, skipping the exclude list"""
-    bl_idname = "addon_name.delete_empties"
+    bl_idname = "wm.addon_name_delete_empties"
     bl_label = "Delete Empties"
     bl_options = {'REGISTER', 'UNDO'}
 

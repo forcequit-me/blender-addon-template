@@ -17,7 +17,7 @@ Ask for the display name if `$ARGUMENTS` is empty, and for the author name. Deri
 | `ADDON_NAME_` | class prefix | package in capitals plus `_` (a shorter one is fine, e.g. `LL_`) | `LIGHT_LINKER_` |
 | `Your Name` | author | bl_info `author`, manifest `maintainer` | `Sam Doe` |
 
-The package becomes the folder name, the operator idname prefix (`addon_name.example` becomes `light_linker.example`), the Scene property, the manifest `id`, `ADDON_FOLDER` in `build.py`, and `MODULE` and `OPERATORS` in the smoke test. Stop and ask for another name if the package would shadow a module Blender or Python already has (`bpy`, `bmesh`, `mathutils`, `addon_utils`, `os`, `json` and so on), or if it is not a valid Python identifier.
+The package becomes the folder name, the operator idname prefix (`wm.addon_name_example` becomes `wm.light_linker_example`), the Scene property, the manifest `id`, `ADDON_FOLDER` in `build.py`, and `MODULE` and `OPERATORS` in the smoke test. Stop and ask for another name if the package would shadow a module Blender or Python already has (`bpy`, `bmesh`, `mathutils`, `addon_utils`, `os`, `json` and so on), or if it is not a valid Python identifier.
 
 Also ask:
 - Where it ships: legacy zip, extensions.blender.org, or both.
@@ -69,4 +69,4 @@ If there is no `.git/`, offer `git init -b main`. If the folder is still a clone
 
 - **Write "Why I made this" yourself.** It is your own words; it will not be drafted for you.
 - Text still marked `PLACEHOLDER` (bl_info `description`, manifest `tagline`, docstrings, README lines) is for you to write. List every hit of `grep -rn PLACEHOLDER` outside `.claude/`, and fill the README ones as the panel takes shape (`docs/README Spec.md`).
-- Rename `addon_name.example` (now `<package>.example`) to a real operator when you build the first feature (`/new-operator`).
+- Rename `wm.addon_name_example` (now `wm.<package>_example`) to a real operator when you build the first feature (`/new-operator`).

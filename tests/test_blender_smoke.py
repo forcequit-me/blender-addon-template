@@ -16,7 +16,7 @@ import bpy
 
 MODULE = 'addon_name'
 OPERATORS = [
-    'addon_name.example',
+    'wm.addon_name_example',
 ]
 
 REPO = Path(__file__).resolve().parent.parent

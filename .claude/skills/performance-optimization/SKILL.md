@@ -13,7 +13,7 @@ Rule: no speed change without a number before and after, on a file big enough to
 import time
 
 start = time.perf_counter()
-bpy.ops.addon_name.example()
+bpy.ops.wm.addon_name_example()
 print(f"example: {(time.perf_counter() - start) * 1000:.1f} ms")
 ```
 
@@ -27,7 +27,7 @@ import pstats
 
 profiler = cProfile.Profile()
 profiler.enable()
-bpy.ops.addon_name.example()
+bpy.ops.wm.addon_name_example()
 profiler.disable()
 pstats.Stats(profiler).sort_stats("cumulative").print_stats(15)
 ```
@@ -59,7 +59,7 @@ times = []
 for _ in range(5):
     build()                                    # rebuild each run: undo does not work headless
     start = time.perf_counter()
-    bpy.ops.addon_name.example()
+    bpy.ops.wm.addon_name_example()
     times.append(time.perf_counter() - start)
 print(f"BENCH median {sorted(times)[len(times) // 2] * 1000:.1f} ms")
 ```

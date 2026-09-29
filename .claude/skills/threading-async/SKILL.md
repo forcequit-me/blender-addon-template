@@ -98,7 +98,7 @@ A queue that renders several setups one after another:
 ```python
 class ADDON_NAME_OT_batch(bpy.types.Operator):
     """Process every object in the file, a slice at a time. Esc stops"""
-    bl_idname = "addon_name.batch"
+    bl_idname = "wm.addon_name_batch"
     bl_label = "Process All"
 
     _timer = None
