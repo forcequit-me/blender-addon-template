@@ -49,6 +49,7 @@ Press N in the 3D Viewport and open the Addon Name tab.
 Edit > Preferences > Add-ons > Addon Name holds the defaults:
 
 - ...each preference, same format...
+- The same two buttons sit at the bottom.
 
 ## Bugs and feedback
 
@@ -64,7 +65,7 @@ Rules:
 - Title is the plain display name, no prefixes.
 - **Why I made this** belongs to the author. For a new add-on, leave a clear placeholder and ask for it. Keep existing text word for word.
 - **Install** says how the version you ship is installed. Legacy zip: the Install from Disk line above. Extensions platform: "Edit > Preferences > Get Extensions, search for Addon Name, click Install." If you ship both, give both, platform first.
-- The line about the two icon buttons belongs only in a legacy build that shows the links footer. An extensions build has no footer (rule 6.1, see `blender-version-targeting`), so the README shipped with it must not mention one.
+- The lines about the two icon buttons (panel and preferences) belong only in a legacy build that shows the links footer. An extensions build has no footer (rule 6.1, see `blender-version-targeting`), so the README shipped with it must not mention one.
 - Leave out: version lines, changelogs, build or zip instructions, test notes, an "Author:" line, anything the user cannot see or do.
 - How to use must match the panel after every UI change: every visible control, in screen order, with its exact label. Nested controls are indented under the section that reveals them.
 

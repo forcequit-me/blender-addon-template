@@ -15,7 +15,7 @@ Run every test for the add-on on both Blenders, from the repo root. `<BLENDER_MI
    ```
    Pass = output contains `SMOKE OK`. It also asserts bl_info and the manifest agree on name, version and minimum Blender. Keep `--factory-startup`: without it a copy of the add-on installed in your own Blender shadows the repo copy.
 
-3. **Extra tests.** Run every other file in `tests/` the same way on both versions. A plain-Python test (no `import bpy`) runs with `python tests/<file>.py`. Read each file's header to tell which.
+3. **Extra tests.** Run every other file in `tests/` the same way on both versions. Plain-Python tests (no real bpy, possibly a stub module) run with `python tests/<file>.py`. Read the test's header.
 
 4. **Fresh install** (when `$ARGUMENTS` says `fresh`, or before a release). Build first (`/build both`, or just legacy), then install each zip into a throwaway Blender config, so your real one is never touched. Put the script and temp dirs in a temp or scratchpad folder, not the repo.
 

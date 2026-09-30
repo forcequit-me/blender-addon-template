@@ -17,7 +17,7 @@ Ask for the display name if `$ARGUMENTS` is empty, and for the author name. Deri
 | `ADDON_NAME_` | class prefix | package in capitals plus `_` (a shorter one is fine, e.g. `LL_`) | `LIGHT_LINKER_` |
 | `Your Name` | author | bl_info `author`, manifest `maintainer` | `Sam Doe` |
 
-The package becomes the folder name, the operator idname prefix (`wm.addon_name_example` becomes `wm.light_linker_example`), the Scene property, the manifest `id`, `ADDON_FOLDER` in `build.py`, and `MODULE` and `OPERATORS` in the smoke test. Stop and ask for another name if the package would shadow a module Blender or Python already has (`bpy`, `bmesh`, `mathutils`, `addon_utils`, `os`, `json` and so on), or if it is not a valid Python identifier.
+The package becomes the folder name, the operator idname prefix (`wm.addon_name_example` becomes `wm.light_linker_example`), the Scene property, the manifest `id`, `ADDON_FOLDER` in `build.py`, and `MODULE` and `OPERATORS` in the smoke test. Stop and ask for another name if the package would shadow a module Blender or Python already has (`bpy`, `bmesh`, `mathutils`, `addon_utils`, `os`, `json` and so on), if it matches another add-on you ship or have installed (the installed copies would collide), or if it is not a valid Python identifier.
 
 Also ask:
 - Where it ships: legacy zip, extensions.blender.org, or both.
@@ -27,13 +27,13 @@ Also ask:
 
 Touch only the add-on's own files: the package folder, `tests/`, `build.py` and `ADDON_README.md`. Leave `CLAUDE.md`, `docs/` and `.claude/` alone: they describe the placeholders on purpose.
 
-1. Rename the folder `addon_name/` to the package, with `git mv` if the repo is under git. Skip `__pycache__`.
+1. Rename the folder `addon_name/` to the package, with `git mv` if the repo is under git. Skip `__pycache__`. On Windows the rename can fail with "Access denied" while the editor has the folder open: create the new folder, move every item into it, then delete the empty old one.
 2. In those files, case-sensitive, replace in this order:
    - `ADDON_NAME_` with the class prefix
    - `addon_name` with the package
    - `Addon Name` with the display name
    - `Your Name` with the author
-3. Set `WEBSITE_URL` and `BUG_REPORT_URL` if given. If the add-on ships only on the extensions platform, offer to delete `ADDON_NAME_PT_links` (now `<PREFIX>_PT_links`), `draw_links` and its call in preferences, and the README line about the two icon buttons (rule 6.1, see the `blender-ui-patterns` skill).
+3. Set `WEBSITE_URL` and `BUG_REPORT_URL` if given. If the add-on ships only on the extensions platform, offer to delete `ADDON_NAME_PT_links` (now `<PREFIX>_PT_links`), `draw_links` and its call in preferences, `links.py` and `icons/`, and the README lines about the two icon buttons in the panel and the preferences (rule 6.1, see the `blender-ui-patterns` skill).
 4. The manifest: `id` is the package, `name` and `version` match bl_info, `tagline` is 64 characters or fewer with no punctuation at the end. Leave a clear `tagline` for the author to write if there is no description yet.
 5. README: `ADDON_README.md` is the add-on's user README (the root `README.md` describes the template). After the renames, move `ADDON_README.md` over `README.md`, replacing it, and delete `ADDON_README.md`. Leave "Why I made this" as the placeholder: the author writes it.
 

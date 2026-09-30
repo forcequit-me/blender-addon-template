@@ -123,6 +123,8 @@ The writing rules in `docs/README Spec.md` and the code rules in `CLAUDE.md` are
 
 ```
 addon_name/           the add-on (bl_info, manifest, operators, properties, panels, preferences)
+  links.py            the links footer's open_link operator and the GitHub icon loader
+  icons/              github.png and its Octicons licence
 build.py              builds the legacy and extension zips
 tests/                headless smoke test
 docs/README Spec.md   how the README and tooltips are written

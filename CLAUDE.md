@@ -19,6 +19,8 @@ One Blender add-on, started from a template. The template ships a small working 
 │   ├── operators.py
 │   ├── properties.py        PropertyGroup stored on the Scene
 │   ├── panels.py            sidebar panel and the links footer
+│   ├── links.py             the footer's open_link operator and the GitHub icon loader
+│   ├── icons/               github.png and its Octicons licence
 │   └── preferences.py
 ├── build.py                 builds the zips
 ├── tests/test_blender_smoke.py
@@ -59,7 +61,7 @@ BLENDER_MIN is the oldest version you support, BLENDER_LATEST the newest you tes
 - `register()` refuses to run below the minimum, because Blender enables a legacy add-on below its minimum with only a warning. Extensions need no check: Blender will not install them below `blender_version_min`. Blender also deletes `bl_info` from an extension's module, so `register()` reads it with `globals().get("bl_info", {})`.
 - Keep bl_info and `blender_manifest.toml` in step: `name`, `version`, and minimum Blender. The smoke test and `python build.py validate` both fail when they differ.
 - **Legacy install** (Edit > Preferences > Add-ons > Install from Disk): the zip holds one package folder plus README.md. The manifest is left out.
-- **Extension** (extensions.blender.org, or a downloaded extension zip): the manifest sits at the zip root. The platform has its own rules. Rule 6.1 forbids store and donation links in the UI, and rule 3.9 forbids touching the OS or other add-ons. So before you publish there, delete the links footer: `ADDON_NAME_PT_links`, `draw_links`, and its call in `preferences.py`. `build.py package --extension` warns if either link is still set.
+- **Extension** (extensions.blender.org, or a downloaded extension zip): the manifest sits at the zip root. The platform has its own rules. Rule 6.1 forbids store and donation links in the UI, and rule 3.9 forbids touching the OS or other add-ons. So before you publish there, delete the links footer: `ADDON_NAME_PT_links`, `draw_links`, its call in `preferences.py`, `links.py` and `icons/`. `build.py package --extension` warns if either link is still set.
 
 ## Links footer
 
@@ -78,6 +80,7 @@ python build.py version 1.2.0                      set the version in bl_info an
 - The extension build runs `blender --command extension build`. build.py finds Blender from `--blender <path>`, then the `BLENDER` environment variable, then PATH, then the newest standard install. Pass `--blender` with BLENDER_LATEST to be explicit.
 - Check an extension zip with `blender --command extension validate build/<zip>`.
 - The zip name comes from the bl_info name and version.
+- Every build you give anyone gets a new version, even before release, so an old copy can always be told apart. Feature: minor. Fix only: patch.
 
 ## Testing
 
@@ -92,7 +95,7 @@ Each must print `SMOKE OK`. The smoke test enables the add-on, checks every oper
 
 - `--factory-startup` is required. Without it, a copy of the add-on installed in your own Blender can load instead of the repo copy, and you end up testing the wrong code.
 - In test scripts, `bpy.ops.wm.read_factory_settings()` switches add-ons off. Enable the add-on again after every reset.
-- Undo cannot be tested headless. Check Ctrl+Z in a real Blender window, or through the Blender MCP.
+- Undo cannot be tested headless. Check Ctrl+Z in a real Blender window.
 - A fresh-install test: point `BLENDER_USER_RESOURCES` at an empty temp folder so your real config is not touched. Then install the legacy zip with `bpy.ops.preferences.addon_install` and enable it, or install the extension zip with `blender --command extension install-file -r user_default -e <zip>`.
 
 ## After changing the add-on
@@ -121,6 +124,7 @@ Follow `docs/README Spec.md`. These are this template's defaults; the author can
 - Advanced settings go in a fold box (see `show_settings` in `panels.py`), so the panel stays short.
 - Prefer direct data access (`bpy.data`, object properties) over `bpy.ops` inside operators. It is faster and does not depend on context.
 - Comments say why, not what.
+- Operator idnames are `wm.addon_name_<name>`; other prefixes get no right-click Assign Shortcut.
 - Use relative imports inside the package (`from . import operators`); extensions require them.
 
 ## Pitfalls
@@ -130,6 +134,8 @@ Follow `docs/README Spec.md`. These are this template's defaults; the author can
 - **`--factory-startup` in every headless test**, or an installed copy shadows the repo copy.
 - **Clean up in `unregister()`**: delete every property you added to Blender types, remove handlers, timers and keymaps, so disable and re-enable works.
 - **Python one-liners with nested quotes break in shells.** Write the script to a file and run `blender --python file.py` instead.
+- **On Windows, renaming a folder the editor has open can fail with "Access denied".** Create the new folder, move every item into it, then delete the empty old one.
+- **Another AI session or tool may have changed files.** Check `git log` and `git status` before assuming a file is as you left it.
 
 ## Dev kit
 

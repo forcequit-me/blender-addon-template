@@ -167,7 +167,7 @@ class ADDON_NAME_PT_links(bpy.types.Panel):
         draw_links(self.layout)
 ```
 
-The buttons use the add-on's own `wm.addon_name_open_link` from `links.py`, not Blender's `wm.url_open`, whose tooltip only says "open a website": ours says where each button goes. Blender has no GitHub icon, so `links.py` loads `icons/github.png` (the Octicons mark, MIT, licence beside it) with `bpy.utils.previews`.
+The buttons use the add-on's own `wm.addon_name_open_link` from `links.py`, not Blender's `wm.url_open`, whose tooltip only says "open a website": ours says where each button goes. Blender has no GitHub icon, so `links.py` loads `icons/github.png` (the Octicons mark, MIT, licence beside it) with `bpy.utils.previews`, importing `bpy.utils.previews` inside the loader so plain-Python tests that stub `bpy` can still import the package.
 
 The same row, after a `separator()`, ends `AddonPreferences.draw`. An add-on with no settings still gets an `AddonPreferences` class that draws only this row.
 

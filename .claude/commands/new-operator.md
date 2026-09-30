@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 Add an operator to the add-on. From `$ARGUMENTS` or by asking, get: what the button does, and where it goes in the panel.
 
-Read the package's `__init__.py`, `operators.py` and `panels.py` first and copy their style: the class prefix (`ADDON_NAME_` in the bare template), the idname prefix (the package name), and how existing operators poll and report. If the template's `example` operator is still there and this is the first real feature, ask whether to replace it.
+Read the package's `__init__.py`, `operators.py` and `panels.py` first and copy their style: the class prefix (`ADDON_NAME_` in the bare template), the idname prefix (`wm.<package>_`), and how existing operators poll and report. If the template's `example` operator is still there and this is the first real feature, ask whether to replace it.
 
 ## Pattern
 

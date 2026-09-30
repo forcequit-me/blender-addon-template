@@ -17,7 +17,7 @@ Start with `git log --oneline -5` and `git status --short` (if the repo uses git
 
 5. **bl_info and manifest in step.** Manifest `name`, `version` and `blender_version_min` match bl_info `name`, `version` and `blender`. Nothing left from the placeholders (`addon_name`, `ADDON_NAME_`, `Addon Name`, `Your Name`, and text marked `PLACEHOLDER`) outside `.claude/`, `CLAUDE.md` and `docs/`, unless this is still the bare template.
 
-6. **Links footer fits the build.** Legacy: `WEBSITE_URL` and `BUG_REPORT_URL` in `panels.py` are real URLs, or the footer draws nothing. Extensions: the footer, `draw_links` and the preferences call are gone (rule 6.1), and nothing modifies the OS or other add-ons (rule 3.9).
+6. **Links footer fits the build.** Legacy: `WEBSITE_URL` and `BUG_REPORT_URL` in `panels.py` are real URLs, or the footer draws nothing. Extensions: the footer, `draw_links`, the preferences call, `links.py` and `icons/` are gone (rule 6.1), and nothing modifies the OS or other add-ons (rule 3.9).
 
 7. **Committed.** `git status --short` is clean. Uncommitted work: report what, do not commit. Push only when asked.
 

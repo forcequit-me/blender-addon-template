@@ -14,7 +14,7 @@ import time, bpy
 times = []
 for _ in range(5):
     t = time.perf_counter()
-    bpy.ops.<package>.<operator>()
+    bpy.ops.wm.<package>_<operator>()
     times.append(time.perf_counter() - t)
 print(f"min {min(times)*1000:.1f} ms, max {max(times)*1000:.1f} ms")
 ```
@@ -32,7 +32,7 @@ print(f"[perf] gather {1000 * (time.perf_counter() - _t):.1f} ms")
 For a whole function, `cProfile` from a headless script is quicker than hand timers. Write its output to a temp or scratchpad folder, not the repo:
 ```python
 import cProfile, pstats
-cProfile.run("bpy.ops.<package>.<operator>()", r"<temp dir>/prof.out")
+cProfile.run("bpy.ops.wm.<package>_<operator>()", r"<temp dir>/prof.out")
 pstats.Stats(r"<temp dir>/prof.out").sort_stats("cumulative").print_stats(15)
 ```
 

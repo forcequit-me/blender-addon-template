@@ -22,6 +22,11 @@ Press N in the 3D Viewport and open the Addon Name tab.
 - **Example**: selects the target object and makes it active.
 - **Settings**: click the header to fold or unfold the settings.
   - **Target**: the object the Example button selects.
+- Two icon buttons sit at the bottom of the panel: the link icon opens my website, the bug report icon opens the bug report page. [Legacy build with the links footer only; delete otherwise.]
+
+Edit > Preferences > Add-ons > Addon Name: [Legacy build with the links footer only; delete this block otherwise.]
+
+- The same two buttons sit at the bottom.
 
 ## Bugs and feedback
 

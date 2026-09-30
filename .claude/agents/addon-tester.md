@@ -20,11 +20,11 @@ Pass means the output contains `SMOKE OK`. A zero exit code alone is not a pass:
 
 `--factory-startup` is required. Without it a copy of the add-on installed in the user's own Blender shadows the repo copy.
 
-Before trusting the smoke test, check its `OPERATORS` list matches every `bl_idname` in the package (`grep -rn "bl_idname = \"<package>\." <package>/`). Add any missing ones.
+Before trusting the smoke test, check its `OPERATORS` list matches every `bl_idname` in the package (`grep -rn "bl_idname = \"wm\.<package>_" <package>/`). Add any missing ones.
 
 ## 2. The other tests
 
-Run every other file in `tests/` the same way on both versions. A plain-Python test (no `import bpy`) runs with `python tests/<file>.py`. Read a test's header before choosing.
+Run every other file in `tests/` the same way on both versions. Plain-Python tests (no real bpy, possibly a stub module) run with `python tests/<file>.py`. Read the test's header.
 
 ## 3. Fresh-install test
 

@@ -17,6 +17,7 @@ import bpy
 MODULE = 'addon_name'
 OPERATORS = [
     'wm.addon_name_example',
+    'wm.addon_name_open_link',
 ]
 
 REPO = Path(__file__).resolve().parent.parent

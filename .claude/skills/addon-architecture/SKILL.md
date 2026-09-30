@@ -16,6 +16,8 @@ description: This template's layout and lifecycle for a Blender add-on - package
 │   ├── panels.py           main panel, UIList, links sub-panel, WEBSITE_URL, BUG_REPORT_URL
 │   ├── properties.py       PropertyGroups and their registration on Scene / WindowManager
 │   ├── preferences.py      AddonPreferences, pref() helper
+│   ├── links.py            the links footer's open_link operator and the GitHub icon loader
+│   ├── icons/              github.png and its Octicons licence
 │   ├── constants.py        enum item lists, defaults      (when needed)
 │   ├── utils.py            shared logic, no bpy.types classes (when needed)
 │   ├── handlers.py         app handlers and timers        (when needed)

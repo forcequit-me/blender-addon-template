@@ -6,6 +6,8 @@ allowed-tools: Read, Edit, Bash, Grep, Glob
 
 Bump the add-on's version. `$ARGUMENTS` is the bump type or an exact version. If it is missing, ask: patch for fixes, minor for new features, major for a big change in how it works.
 
+Every build you give anyone gets a new version, even before release, so an old copy can always be told apart. Feature: minor. Fix only: patch.
+
 1. Read `"version"` from bl_info in `<package>/__init__.py` (the package is `ADDON_FOLDER` in `build.py`). Work out the new version and show old and new.
 2. Set both at once from the repo root:
    ```
