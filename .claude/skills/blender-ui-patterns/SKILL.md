@@ -131,7 +131,7 @@ Popover panels use `bl_region_type = 'HEADER'` and `bl_ui_units_x` for width.
 
 ## The links footer (legacy builds only)
 
-Two centred icon buttons: globe (`URL`) to `WEBSITE_URL`, `HELP` to `BUG_REPORT_URL`. Both constants live at the top of `panels.py`, start empty, and `draw_links()` draws nothing while both are empty, so fill them in before shipping a legacy build. In the sidebar it is a header-less sub-panel with `bl_order = 100` so it always sits last:
+Two centred icon buttons: globe (`URL`) to `WEBSITE_URL`, and the bug report button to `BUG_REPORT_URL`: the GitHub mark when that page is on github.com, `HELP` otherwise. Both constants live at the top of `panels.py`, start empty, and `draw_links()` draws nothing while both are empty, so fill them in before shipping a legacy build. In the sidebar it is a header-less sub-panel with `bl_order = 100` so it always sits last:
 
 ```python
 WEBSITE_URL = ""
@@ -144,9 +144,12 @@ def draw_links(layout):
     row = layout.row()
     row.alignment = 'CENTER'
     if WEBSITE_URL:
-        row.operator("wm.url_open", text="", icon='URL').url = WEBSITE_URL
+        row.operator("wm.addon_name_open_link", text="", icon='URL').url = WEBSITE_URL
     if BUG_REPORT_URL:
-        row.operator("wm.url_open", text="", icon='HELP').url = BUG_REPORT_URL
+        if "github.com" in BUG_REPORT_URL:
+            row.operator("wm.addon_name_open_link", text="", icon_value=github_icon()).url = BUG_REPORT_URL
+        else:
+            row.operator("wm.addon_name_open_link", text="", icon='HELP').url = BUG_REPORT_URL
 
 
 class ADDON_NAME_PT_links(bpy.types.Panel):
@@ -164,9 +167,11 @@ class ADDON_NAME_PT_links(bpy.types.Panel):
         draw_links(self.layout)
 ```
 
+The buttons use the add-on's own `wm.addon_name_open_link` from `links.py`, not Blender's `wm.url_open`, whose tooltip only says "open a website": ours says where each button goes. Blender has no GitHub icon, so `links.py` loads `icons/github.png` (the Octicons mark, MIT, licence beside it) with `bpy.utils.previews`.
+
 The same row, after a `separator()`, ends `AddonPreferences.draw`. An add-on with no settings still gets an `AddonPreferences` class that draws only this row.
 
-**Extensions builds carry no footer.** Rule 6.1 of the extensions platform bans links to commercial or funding sites and donation buttons inside Blender's UI. Before uploading to extensions.blender.org, delete `ADDON_NAME_PT_links`, `draw_links` and the call in preferences by hand (and drop the class from the tuple and the README line about the buttons). `python build.py package --extension` warns, but still builds, while either URL is set.
+**Extensions builds carry no footer.** Rule 6.1 of the extensions platform bans links to commercial or funding sites and donation buttons inside Blender's UI. Before uploading to extensions.blender.org, delete `ADDON_NAME_PT_links`, `draw_links`, the call in preferences, `links.py` and `icons/` by hand (and drop the class from the tuple and the README line about the buttons). `python build.py package --extension` warns, but still builds, while either URL is set.
 
 ## Preferences screen
 

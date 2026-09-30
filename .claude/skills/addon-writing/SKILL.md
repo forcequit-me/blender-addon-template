@@ -44,7 +44,7 @@ Press N in the 3D Viewport and open the Addon Name tab.
 
 - **Example Button**: what happens when you click it, and what the status bar reports.
 - ...every visible control, in the order the user meets it, one line each...
-- Two icon buttons sit at the bottom of the panel: the link icon opens my website, the **?** icon opens the bug report page.
+- Two icon buttons sit at the bottom of the panel: the link icon opens my website, the **GitHub** icon (or **?**, if the page isn't on GitHub) opens the bug report page.
 
 Edit > Preferences > Add-ons > Addon Name holds the defaults:
 
@@ -52,7 +52,7 @@ Edit > Preferences > Add-ons > Addon Name holds the defaults:
 
 ## Bugs and feedback
 
-Found a bug? <bug report URL>. The ? button at the bottom of the panel goes there too.
+Found a bug? <bug report URL>. The bug report button at the bottom of the panel goes there too.
 
 ## Thanks
 

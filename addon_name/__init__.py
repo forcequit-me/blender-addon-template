@@ -16,6 +16,7 @@ from . import properties
 from . import preferences
 from . import operators
 from . import panels
+from . import links
 
 
 classes = (
@@ -24,6 +25,7 @@ classes = (
     operators.ADDON_NAME_OT_example,
     panels.ADDON_NAME_PT_panel,
     panels.ADDON_NAME_PT_links,
+    links.ADDON_NAME_OT_open_link,
 )
 
 
@@ -38,6 +40,7 @@ def register():
             f"Addon Name requires Blender {'.'.join(map(str, minimum))} or newer. "
             f"You are running {'.'.join(map(str, bpy.app.version))}."
         )
+    links._load_icons()
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.Scene.addon_name = bpy.props.PointerProperty(type=properties.ADDON_NAME_Properties)
@@ -51,3 +54,4 @@ def unregister():
         del bpy.types.Scene.addon_name
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+    links._unload_icons()

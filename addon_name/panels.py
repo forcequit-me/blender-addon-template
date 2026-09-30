@@ -1,9 +1,11 @@
 from bpy.types import Panel
 
+from .links import github_icon
+
 
 # Links footer for legacy (Install from Disk) builds. The row draws nothing while both are empty.
-# Before publishing on extensions.blender.org, delete the footer: ADDON_NAME_PT_links, draw_links
-# and the call in preferences.py. The platform rules forbid store and donation links in the UI
+# Before publishing on extensions.blender.org, delete the footer: ADDON_NAME_PT_links, draw_links,
+# the call in preferences.py, links.py and icons/. The platform rules forbid store and donation links in the UI
 # (rule 6.1) and forbid touching the OS or other add-ons (rule 3.9).
 WEBSITE_URL = ""
 BUG_REPORT_URL = ""
@@ -15,9 +17,13 @@ def draw_links(layout):
     row = layout.row()
     row.alignment = 'CENTER'
     if WEBSITE_URL:
-        row.operator("wm.url_open", text="", icon='URL').url = WEBSITE_URL
+        row.operator("wm.addon_name_open_link", text="", icon='URL').url = WEBSITE_URL
     if BUG_REPORT_URL:
-        row.operator("wm.url_open", text="", icon='HELP').url = BUG_REPORT_URL
+        # The GitHub mark when the page is on GitHub, so people know where it goes
+        if "github.com" in BUG_REPORT_URL:
+            row.operator("wm.addon_name_open_link", text="", icon_value=github_icon()).url = BUG_REPORT_URL
+        else:
+            row.operator("wm.addon_name_open_link", text="", icon='HELP').url = BUG_REPORT_URL
 
 
 class ADDON_NAME_PT_panel(Panel):

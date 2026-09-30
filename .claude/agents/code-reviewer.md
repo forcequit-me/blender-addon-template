@@ -41,7 +41,7 @@ Read `CLAUDE.md` first. It wins over anything here.
 - No AI attribution anywhere: comments, docstrings, headers, README.
 
 ### Links footer
-- Legacy build: the sidebar has the header-less `<PREFIX>_PT_links` sub-panel (`bl_options = {'HIDE_HEADER'}`, `bl_order = 100`) and preferences end with the same row. `WEBSITE_URL` and `BUG_REPORT_URL` in `panels.py` hold real URLs, or the footer draws nothing.
+- Legacy build: the sidebar has the header-less `<PREFIX>_PT_links` sub-panel (`bl_options = {'HIDE_HEADER'}`, `bl_order = 100`) and preferences end with the same row. `WEBSITE_URL` and `BUG_REPORT_URL` in `panels.py` hold real URLs, or the footer draws nothing. The buttons use `wm.<package>_open_link` from `links.py` (tooltips that say where they go), never bare `wm.url_open`.
 - Extensions build: no footer at all, no store or donation links anywhere in the UI (rule 6.1), and nothing that modifies the OS, other add-ons or Blender's own modules (rule 3.9).
 
 ## Output

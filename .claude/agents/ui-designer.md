@@ -19,7 +19,7 @@ Review the `draw()` methods in `panels.py` and `preferences.py`. Do not edit fil
 ## House layout
 
 - Sidebar tab (`bl_category`) and panel label are the plain add-on name.
-- Legacy build: the links row (globe and "?") is the last thing in the panel, a header-less sub-panel with `bl_order = 100`, and preferences end with the same two buttons, centred. Anything new must sit above it.
+- Legacy build: the links row (globe and bug report button) is the last thing in the panel, a header-less sub-panel with `bl_order = 100`, and preferences end with the same two buttons, centred. Anything new must sit above it.
 - Extensions build: no links row at all (rule 6.1 of extensions.blender.org).
 - Labels on buttons are short verbs the user would say ("Parent to Active", not "Execute Parenting Operation").
 - Use Blender's own icons the way Blender uses them. Do not decorate every button.
