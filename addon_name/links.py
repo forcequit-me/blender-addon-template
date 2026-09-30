@@ -18,8 +18,8 @@ class ADDON_NAME_OT_open_link(bpy.types.Operator):
         # Blender's own url_open tooltip only says "open a website", so say which and why
         from .panels import WEBSITE_URL
         if properties.url == WEBSITE_URL:
-            return "My website: more add-ons and where to find me. Opens in your browser"
-        return "Report a bug or suggest a change for Addon Name. Opens in your browser"
+            return "My website: more add-ons and where to find me"
+        return "Report a bug or suggest a change for Addon Name"
 
     def execute(self, context):
         bpy.ops.wm.url_open(url=self.url)
