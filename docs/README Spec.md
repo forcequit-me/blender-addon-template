@@ -14,6 +14,7 @@ Seven sections, top to bottom:
 4. `## Install`. The steps for the install type you ship, and the minimum Blender version.
    - Legacy zip: Edit > Preferences > Add-ons > arrow menu > Install from Disk, pick the zip, tick it on.
    - Extension: Edit > Preferences > Get Extensions, search for it and click Install. Or, for a downloaded zip, Get Extensions > arrow menu > Install from Disk.
+   - After an update, restart Blender so the new version loads, or untick and tick the add-on.
 5. `## How to use`. Where to find it (for example "Press N in the 3D Viewport and open the Addon Name tab"), then every button and setting you can see, in the order you see it, one line each, with the exact labels from the panel. Then the same for the preferences, if they show anything.
 6. `## Bugs and feedback`. Where to report a bug. If the links footer has a bug report button, say it goes to the same place.
 7. `## Thanks`. Anyone you want to credit. Delete the section if there is no one.

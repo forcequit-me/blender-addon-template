@@ -14,6 +14,7 @@
 
 Edit > Preferences > Add-ons > arrow menu > Install from Disk, pick the zip, tick it on.
 Needs Blender 5.0 or newer.
+After an update, restart Blender so the new version loads, or untick and tick the add-on.
 
 ## How to use
 
