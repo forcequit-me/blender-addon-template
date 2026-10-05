@@ -10,6 +10,15 @@ bl_info = {
     "category": "3D View",
 }
 
+import sys
+
+# Installing an update over a loaded copy reloads only this file, and the add-on's
+# other files would stay the old version in memory. Drop them so the imports below
+# load the new ones (the attribute too, or "from . import x" hands back the old x).
+for _name in [n for n in sys.modules if n.startswith(__name__ + ".")]:
+    del sys.modules[_name]
+    globals().pop(_name[len(__name__) + 1:].split(".")[0], None)
+
 import bpy
 
 from . import properties

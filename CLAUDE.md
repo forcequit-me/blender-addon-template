@@ -131,6 +131,7 @@ Follow `docs/README Spec.md`. These are this template's defaults; the author can
 
 - **Never touch `bpy.data` inside `register()`.** It raises `_RestrictData` errors. Run first-time scene setup from `bpy.app.timers.register(fn, first_interval=0)`.
 - **Store object and collection references as `PointerProperty`**, not names, so they survive renames. If older versions stored names, migrate them on file load (a `load_post` handler).
+- **An update reloads only the add-on's `__init__.py`.** Blender keeps the other files in memory as the old version, so an update that adds a class fails to enable ("module has no attribute") until Blender restarts. `__init__.py` drops the add-on's own submodules from `sys.modules` before importing them, and the smoke test fakes an update (`check_update_loads_new_files`). Keep both. Even so, after Install from Disk the new version only runs once the add-on is unticked and ticked, or Blender restarts.
 - **`--factory-startup` in every headless test**, or an installed copy shadows the repo copy.
 - **Clean up in `unregister()`**: delete every property you added to Blender types, remove handlers, timers and keymaps, so disable and re-enable works.
 - **Python one-liners with nested quotes break in shells.** Write the script to a file and run `blender --python file.py` instead.
