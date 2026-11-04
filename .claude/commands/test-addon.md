@@ -41,4 +41,6 @@ Run every test for the add-on on both Blenders, from the repo root. `<BLENDER_MI
 
 6. Remind the user that undo (Ctrl+Z) cannot be tested headless; list the operators whose undo they should try in a real window.
 
+No Blender app (a cloud session or CI): `pip install bpy==<version>` (each bpy wheel needs one Python version, see its PyPI page), then `python .claude/scripts/bpy_tests.py` runs every `tests/test_*.py` with PyPI's bpy module. Say in the report that it ran on bpy, not the app.
+
 For live testing inside the running Blender, use `/test-in-blender`.
