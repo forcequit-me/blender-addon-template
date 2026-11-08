@@ -14,7 +14,21 @@ Source of truth: `docs/README Spec.md`. If it and this skill disagree, the spec 
 - No hype: no "powerful", "seamless", "effortless", "blazing", "ultimate", "game-changer".
 - **No em dashes.** Use a full stop, a comma or a colon. Check with a search for `—` before finishing. En dashes as dashes are out too. The `check_edit.py` hook flags em dashes in READMEs and in tooltip lines.
 - Name controls exactly as they appear on screen, in bold in the README.
-- Run a prose clean-up pass (a "stop slop" style skill, if you have one) over any README or long text.
+- Clean READMEs, tooltips and messages with two prose skills if you have them, in this order:
+  1. [humanizer](https://github.com/blader/humanizer) does the rewrite: mark the AI-writing tells, rewrite, then check that no fact, number, label or control name changed.
+  2. A "stop slop" style skill is the final check: its quick checks and score.
+  Either one alone is fine if you only have one.
+
+### When the skills and these rules disagree
+
+The rules in this skill win:
+
+- Tooltips and labels may be fragments or imperatives ("Delete the selected group"), so "every sentence needs a human subject" does not apply to them.
+- Passive voice is fine when the actor is obvious ("Undone with Ctrl+Z").
+- Keep three items when there really are three things.
+- Keep adverbs that change meaning ("only", "still", "again"); cut filler like "simply".
+- Bold control names in a README are deliberate, not decoration.
+- Never touch links, code, paths or exact on-screen labels.
 
 ## README: seven sections, in this order
 
